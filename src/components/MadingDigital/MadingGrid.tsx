@@ -212,8 +212,11 @@ export const MadingGrid: React.FC<MadingGridProps> = ({
             <MadingCard
               key={post.id}
               post={post}
+              currentUser={currentUser}
               onSelect={onSelectPost}
               onLike={onLikePost}
+              onApprove={onApprovePost}
+              onReject={onRejectPost}
             />
           ))}
         </div>

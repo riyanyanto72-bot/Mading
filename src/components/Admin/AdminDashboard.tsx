@@ -50,7 +50,9 @@ import {
   Layers,
   HelpCircle,
   Shield,
-  PlusCircle
+  PlusCircle,
+  Clock,
+  CheckCheck
 } from 'lucide-react';
 import { StudentImportModal } from './StudentImportModal';
 
@@ -146,6 +148,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Mading Management States
   const [madingSearchQuery, setMadingSearchQuery] = useState<string>('');
   const [madingCategoryFilter, setMadingCategoryFilter] = useState<string>('ALL');
+  const [madingStatusFilter, setMadingStatusFilter] = useState<'ALL' | 'pending' | 'published'>('ALL');
   const [postToDelete, setPostToDelete] = useState<MadingPost | null>(null);
   const [previewPost, setPreviewPost] = useState<MadingPost | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<StudentGraduation | null>(null);
@@ -558,6 +561,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   };
 
+  const handleApprovePost = (postId: string) => {
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    const updatedPosts = posts.map((p) =>
+      p.id === postId ? { ...p, status: 'published' as const } : p
+    );
+    onUpdatePosts(updatedPosts);
+    showToast(`Karya "${target.title}" berhasil disetujui dan kini resmi tayang di Mading!`, 'success');
+  };
+
+  const handleRejectPost = (postId: string) => {
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    onUpdatePosts(posts.filter((p) => p.id !== postId));
+    showToast(`Karya "${target.title}" telah ditolak dan dihapus.`, 'info');
+  };
+
   const handleCreateNewPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
@@ -775,7 +795,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }`}
         >
           <Newspaper className="w-4 h-4 text-blue-600" />
-          <span>Kelola Mading</span>
+          <span>Kelola Mading & Moderasi</span>
+          {posts.filter((p) => p.status === 'pending').length > 0 ? (
+            <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1 shadow-xs">
+              <Clock className="w-2.5 h-2.5" />
+              <span>{posts.filter((p) => p.status === 'pending').length} Menunggu</span>
+            </span>
+          ) : (
+            <span className="bg-blue-100 text-blue-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+              {posts.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -2601,7 +2631,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: KELOLA MADING */}
+      {/* TAB 4: KELOLA MADING & MODERASI */}
       {/* ========================================================================= */}
       {activeTab === 'mading' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
@@ -2612,10 +2642,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
                   <Newspaper className="w-4 h-4" />
                 </span>
-                <h3 className="font-black text-xl text-slate-900">Kelola Postingan Mading Sekolah</h3>
+                <h3 className="font-black text-xl text-slate-900">Kelola Postingan & Moderasi Mading</h3>
               </div>
               <p className="text-xs text-slate-500">
-                Moderasi postingan karya siswa, berita pengumuman sekolah, dan kelola artikel mading.
+                Tinjau dan setujui karya kiriman siswa (moderasi), terbitkan berita resmi sekolah, dan kelola artikel mading.
               </p>
             </div>
 
@@ -2634,7 +2664,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tulis Postingan Mading</span>
+                <span>Tulis Postingan Baru</span>
               </button>
             </div>
           </div>
@@ -2645,49 +2675,136 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span className="text-[11px] font-bold text-slate-500 block uppercase">Total Mading</span>
               <span className="text-xl font-black text-slate-900">{posts.length}</span>
             </div>
-            <div className="bg-amber-50/60 border border-amber-200/80 p-3.5 rounded-2xl">
-              <span className="text-[11px] font-bold text-amber-800 block uppercase">Disematkan (Pin)</span>
-              <span className="text-xl font-black text-amber-900">{posts.filter((p) => p.pinned).length}</span>
+
+            <div 
+              onClick={() => setMadingStatusFilter('pending')}
+              className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                posts.filter((p) => p.status === 'pending').length > 0
+                  ? 'bg-amber-50 border-amber-300 hover:border-amber-400 hover:shadow-xs'
+                  : 'bg-slate-50 border-slate-200'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-900 block uppercase">Menunggu Moderasi</span>
+                {posts.filter((p) => p.status === 'pending').length > 0 && (
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                )}
+              </div>
+              <span className="text-xl font-black text-amber-950">
+                {posts.filter((p) => p.status === 'pending').length} Karya
+              </span>
             </div>
+
+            <div className="bg-emerald-50/60 border border-emerald-200/80 p-3.5 rounded-2xl">
+              <span className="text-[11px] font-bold text-emerald-800 block uppercase">Sudah Terbit</span>
+              <span className="text-xl font-black text-emerald-900">{posts.filter((p) => p.status !== 'pending').length} Post</span>
+            </div>
+
             <div className="bg-rose-50/60 border border-rose-200/80 p-3.5 rounded-2xl">
               <span className="text-[11px] font-bold text-rose-800 block uppercase">Total Apresiasi</span>
               <span className="text-xl font-black text-rose-900">{posts.reduce((acc, p) => acc + (p.likes || 0), 0)} Suka</span>
             </div>
-            <div className="bg-teal-50/60 border border-teal-200/80 p-3.5 rounded-2xl">
-              <span className="text-[11px] font-bold text-teal-800 block uppercase">Total Tanggapan</span>
-              <span className="text-xl font-black text-teal-900">{posts.reduce((acc, p) => acc + (p.comments?.length || 0), 0)} Komentar</span>
-            </div>
           </div>
 
-          {/* Search & Category Filter Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {['ALL', 'Pengumuman', 'Berita Sekolah', 'Karya Siswa', 'Opini & Esai', 'Prestasi & Lomba', 'Literasi & Puisi'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setMadingCategoryFilter(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                    madingCategoryFilter === cat
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat === 'ALL' ? 'Semua Kategori' : cat}
-                </button>
-              ))}
+          {/* Pending Moderation Alert Banner */}
+          {posts.filter((p) => p.status === 'pending').length > 0 && (
+            <div className="bg-linear-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center flex-shrink-0 font-bold">
+                  <Clock className="w-5 h-5 animate-spin" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-amber-950">
+                    Ada {posts.filter((p) => p.status === 'pending').length} Karya Siswa Menunggu Moderasi & Persetujuan
+                  </h4>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    Karya ini belum ditampilkan ke publik. Klik <strong>"Setujui & Publikasikan"</strong> untuk menayangkan karya ke seluruh warga sekolah.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMadingStatusFilter('pending')}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl transition-colors whitespace-nowrap shadow-xs cursor-pointer flex-shrink-0"
+              >
+                Tampilkan Karya Menunggu Moderasi ({posts.filter((p) => p.status === 'pending').length})
+              </button>
+            </div>
+          )}
+
+          {/* Filter Status & Kategori Toolbar */}
+          <div className="space-y-3 pt-1">
+            {/* Status Filter Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap mr-1">
+                Filter Status:
+              </span>
+              <button
+                onClick={() => setMadingStatusFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                  madingStatusFilter === 'ALL'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Semua Post ({posts.length})
+              </button>
+              <button
+                onClick={() => setMadingStatusFilter('pending')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  madingStatusFilter === 'pending'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Menunggu Moderasi ({posts.filter((p) => p.status === 'pending').length})</span>
+              </button>
+              <button
+                onClick={() => setMadingStatusFilter('published')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  madingStatusFilter === 'published'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                }`}
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Sudah Terbit ({posts.filter((p) => p.status !== 'pending').length})</span>
+              </button>
             </div>
 
-            {/* Search Box */}
-            <div className="relative min-w-[220px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari judul, penulis, atau kata kunci..."
-                value={madingSearchQuery}
-                onChange={(e) => setMadingSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white"
-              />
+            {/* Category Filter & Search Box */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-1.5 flex-1">
+                {['ALL', 'Pengumuman', 'Berita Sekolah', 'Karya Siswa', 'Opini & Esai', 'Prestasi & Lomba', 'Literasi & Puisi'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setMadingCategoryFilter(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                      madingCategoryFilter === cat
+                        ? 'bg-indigo-950 text-amber-300 shadow-xs font-black'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat === 'ALL' ? 'Semua Kategori' : cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box */}
+              <div className="relative min-w-[240px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari judul, penulis, isi..."
+                  value={madingSearchQuery}
+                  onChange={(e) => setMadingSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white"
+                />
+              </div>
             </div>
           </div>
 
@@ -2697,18 +2814,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="p-3.5">Judul & Isi Singkat</th>
-                  <th className="p-3.5">Kategori</th>
+                  <th className="p-3.5">Status & Kategori</th>
                   <th className="p-3.5">Penulis & Tanggal</th>
                   <th className="p-3.5">Interaksi</th>
-                  <th className="p-3.5 text-right">Aksi Kelola</th>
+                  <th className="p-3.5 text-right">Aksi Moderasi & Kelola</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {posts
                   .filter((p) => {
+                    // Status Filter
+                    if (madingStatusFilter === 'pending' && p.status !== 'pending') {
+                      return false;
+                    }
+                    if (madingStatusFilter === 'published' && p.status === 'pending') {
+                      return false;
+                    }
+                    // Category Filter
                     if (madingCategoryFilter !== 'ALL' && p.category !== madingCategoryFilter) {
                       return false;
                     }
+                    // Search Query
                     if (madingSearchQuery.trim()) {
                       const query = madingSearchQuery.toLowerCase();
                       const matchTitle = p.title.toLowerCase().includes(query);
@@ -2718,108 +2844,166 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     }
                     return true;
                   })
-                  .map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Title & Cover */}
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-3">
-                          {p.coverImage ? (
-                            <img
-                              src={p.coverImage}
-                              alt={p.title}
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
-                              <Newspaper className="w-5 h-5" />
+                  .map((p) => {
+                    const isPending = p.status === 'pending';
+
+                    return (
+                      <tr 
+                        key={p.id} 
+                        className={`transition-colors ${
+                          isPending 
+                            ? 'bg-amber-50/50 hover:bg-amber-50/80' 
+                            : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* Title & Cover */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            {p.coverImage ? (
+                              <img
+                                src={p.coverImage}
+                                alt={p.title}
+                                className="w-11 h-11 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+                                isPending ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-slate-100 border-slate-200 text-slate-400'
+                              }`}>
+                                <Newspaper className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div className="max-w-md">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h4 className="font-extrabold text-slate-900 leading-snug">
+                                  {p.title}
+                                </h4>
+                                {p.pinned && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                    <Pin className="w-2.5 h-2.5 fill-amber-600" />
+                                    <span>Pin</span>
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                                {p.excerpt || p.content.replace(/<[^>]*>?/gm, '').slice(0, 70) + '...'}
+                              </p>
                             </div>
-                          )}
-                          <div className="max-w-md">
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="font-extrabold text-slate-900 leading-snug truncate">
-                                {p.title}
-                              </h4>
-                              {p.pinned && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300">
-                                  <Pin className="w-2.5 h-2.5 fill-amber-600" />
-                                  <span>Pin</span>
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                              {p.excerpt || p.content.replace(/<[^>]*>?/gm, '').slice(0, 70) + '...'}
-                            </p>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Category */}
-                      <td className="p-3.5">
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-indigo-50 text-indigo-900 border border-indigo-200 whitespace-nowrap">
-                          {p.category}
-                        </span>
-                      </td>
+                        {/* Status & Category */}
+                        <td className="p-3.5">
+                          <div className="space-y-1">
+                            {isPending ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap animate-pulse">
+                                <Clock className="w-3 h-3" />
+                                <span>Menunggu Moderasi</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 whitespace-nowrap">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>Sudah Terbit</span>
+                              </span>
+                            )}
+                            <div>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200 inline-block">
+                                {p.category}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                      {/* Author & Date */}
-                      <td className="p-3.5">
-                        <div className="text-xs">
-                          <span className="font-bold text-slate-900 block">{p.author}</span>
-                          <span className="text-[11px] text-slate-400 block">{p.date}</span>
-                        </div>
-                      </td>
+                        {/* Author & Date */}
+                        <td className="p-3.5">
+                          <div className="text-xs">
+                            <span className="font-bold text-slate-900 block">{p.author}</span>
+                            <span className="text-[11px] text-slate-400 block">{p.date}</span>
+                          </div>
+                        </td>
 
-                      {/* Interactions */}
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold">
-                          <span className="flex items-center gap-1" title={`${p.likes} suka`}>
-                            <Heart className="w-3.5 h-3.5 text-rose-500" />
-                            <span>{p.likes}</span>
-                          </span>
-                          <span className="flex items-center gap-1" title={`${p.comments?.length || 0} komentar`}>
-                            <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
-                            <span>{p.comments?.length || 0}</span>
-                          </span>
-                        </div>
-                      </td>
+                        {/* Interactions */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold">
+                            <span className="flex items-center gap-1" title={`${p.likes} suka`}>
+                              <Heart className="w-3.5 h-3.5 text-rose-500" />
+                              <span>{p.likes}</span>
+                            </span>
+                            <span className="flex items-center gap-1" title={`${p.comments?.length || 0} komentar`}>
+                              <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
+                              <span>{p.comments?.length || 0}</span>
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Action buttons */}
-                      <td className="p-3.5 text-right whitespace-nowrap space-x-1">
-                        {/* Preview button */}
-                        <button
-                          type="button"
-                          onClick={() => setPreviewPost(p)}
-                          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          title="Lihat Detail Artikel"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        {/* Action buttons */}
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Khusus Moderasi: Setujui */}
+                            {isPending && (
+                              <button
+                                type="button"
+                                onClick={() => handleApprovePost(p.id)}
+                                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                                title="Setujui Karya Siswa & Publikasikan ke Mading"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Setujui</span>
+                              </button>
+                            )}
 
-                        {/* Pin toggle button */}
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePinPost(p.id, p.pinned)}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                            p.pinned
-                              ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-                              : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
-                          }`}
-                          title={p.pinned ? 'Lepas Sematan (Unpin)' : 'Sematkan ke Atas (Pin)'}
-                        >
-                          <Pin className={`w-4 h-4 ${p.pinned ? 'fill-amber-600' : ''}`} />
-                        </button>
+                            {/* Tombol Khusus Moderasi: Tolak */}
+                            {isPending && (
+                              <button
+                                type="button"
+                                onClick={() => handleRejectPost(p.id)}
+                                className="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Tolak & Hapus Kiriman Karya"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>Tolak</span>
+                              </button>
+                            )}
 
-                        {/* Delete post button */}
-                        <button
-                          type="button"
-                          onClick={() => setPostToDelete(p)}
-                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Postingan Mading"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                            {/* Preview button */}
+                            <button
+                              type="button"
+                              onClick={() => setPreviewPost(p)}
+                              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              title="Lihat Detail Artikel"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+
+                            {/* Pin toggle button (only for published posts) */}
+                            {!isPending && (
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePinPost(p.id, p.pinned)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  p.pinned
+                                    ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                }`}
+                                title={p.pinned ? 'Lepas Sematan (Unpin)' : 'Sematkan ke Atas (Pin)'}
+                              >
+                                <Pin className={`w-4 h-4 ${p.pinned ? 'fill-amber-600' : ''}`} />
+                              </button>
+                            )}
+
+                            {/* Delete post button */}
+                            <button
+                              type="button"
+                              onClick={() => setPostToDelete(p)}
+                              className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Hapus Postingan Mading"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                 {posts.length === 0 && (
                   <tr>

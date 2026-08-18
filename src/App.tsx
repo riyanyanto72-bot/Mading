@@ -380,7 +380,7 @@ export default function App() {
 
   const handleApprovePost = (postId: string) => {
     if (confirm('Setujui karya ini untuk dipublikasikan di mading utama?')) {
-      const updatedPosts = posts.map((p) => (p.id === postId ? { ...p, status: 'approved' as const } : p));
+      const updatedPosts = posts.map((p) => (p.id === postId ? { ...p, status: 'published' as const } : p));
       setPosts(updatedPosts);
       const postToUpdate = updatedPosts.find((p) => p.id === postId);
       if (postToUpdate) saveMadingPostToFirestore(postToUpdate).catch(console.error);
@@ -468,7 +468,7 @@ export default function App() {
         )}
 
         {activeTab === 'admin' && (
-          currentUser.role === 'admin' ? (
+          (currentUser.role === 'admin' || currentUser.role === 'guru') ? (
             <AdminDashboard
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
@@ -492,7 +492,7 @@ export default function App() {
               </div>
               <h3 className="text-lg font-black text-slate-900">Akses Dibatasi</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Panel Administrator hanya dapat diakses oleh akun resmi Administrator Sekolah.
+                Panel ini hanya dapat diakses oleh akun resmi Guru atau Administrator Sekolah.
               </p>
               <button
                 onClick={() => setActiveTab('mading')}

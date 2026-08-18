@@ -206,8 +206,8 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Profil Sekolah</span>
             </button>
 
-            {/* Tab Panel Admin - Hanya Tampil Untuk Role Admin */}
-            {currentUser.role === 'admin' && (
+            {/* Tab Panel Admin & Guru (Moderasi) - Tampil Untuk Role Admin & Guru */}
+            {(currentUser.role === 'admin' || currentUser.role === 'guru') && (
               <button
                 onClick={() => setActiveTab('admin')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
@@ -215,10 +215,10 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'bg-amber-400 text-indigo-950 shadow-xs'
                     : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
                 }`}
-                title="Panel Pengelolaan Administrator Sekolah"
+                title={currentUser.role === 'admin' ? 'Panel Pengelolaan Administrator Sekolah' : 'Panel Guru & Moderasi Mading'}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Panel Admin</span>
+                <span>{currentUser.role === 'admin' ? 'Panel Admin' : 'Panel Guru & Moderasi'}</span>
               </button>
             )}
 
