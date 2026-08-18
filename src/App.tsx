@@ -48,6 +48,13 @@ export default function App() {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<NavigationTab>('mading');
 
+  // Sync document title
+  useEffect(() => {
+    if (settings?.schoolName) {
+      document.title = `${settings.schoolName} - Portal Mading & Kelulusan`;
+    }
+  }, [settings?.schoolName]);
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -90,6 +97,9 @@ export default function App() {
     const unsubSettings = subscribeSchoolSettings((newSettings) => {
       setSettings(newSettings);
       localStorage.setItem('school_settings_v1', JSON.stringify(newSettings));
+      if (newSettings?.schoolName) {
+        document.title = `${newSettings.schoolName} - Portal Mading & Kelulusan`;
+      }
     });
 
     // 3. Real-time subscriber for Mading Posts
