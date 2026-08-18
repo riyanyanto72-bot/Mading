@@ -104,15 +104,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onViewPublicProfile,
   initialTab,
 }) => {
+  const isGuru = currentUser.role === 'guru';
   const [activeTab, setActiveTab] = useState<'kelulusan' | 'accounts' | 'pengaturan' | 'mading' | 'profil_sekolah'>(
-    initialTab || 'accounts'
+    isGuru ? 'mading' : (initialTab || 'accounts')
   );
 
   useEffect(() => {
-    if (initialTab) {
+    if (isGuru) {
+      setActiveTab('mading');
+    } else if (initialTab) {
       setActiveTab(initialTab);
     }
-  }, [initialTab]);
+  }, [initialTab, isGuru]);
 
   // Student editor state
   const [editingStudent, setEditingStudent] = useState<StudentGraduation | null>(null);
@@ -709,78 +712,82 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="space-y-6">
       {/* Navigation Sub-Tabs */}
       <div className="flex border-b border-slate-200 overflow-x-auto hide-scrollbar gap-2">
-        <button
-          onClick={() => {
-            setActiveTab('accounts');
-            setEditingStudent(null);
-            setEditingStaff(null);
-          }}
-          className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'accounts'
-              ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Users className="w-4 h-4 text-indigo-600" />
-          <span>Akun Login Siswa, Guru & Admin</span>
-          <span className="bg-indigo-100 text-indigo-900 text-[10px] px-2 py-0.5 rounded-full font-black">
-            {totalAllAccounts}
-          </span>
-        </button>
+        {!isGuru && (
+          <>
+            <button
+              onClick={() => {
+                setActiveTab('accounts');
+                setEditingStudent(null);
+                setEditingStaff(null);
+              }}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'accounts'
+                  ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Users className="w-4 h-4 text-indigo-600" />
+              <span>Akun Login Siswa, Guru & Admin</span>
+              <span className="bg-indigo-100 text-indigo-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+                {totalAllAccounts}
+              </span>
+            </button>
 
-        <button
-          onClick={() => {
-            setActiveTab('kelulusan');
-            setEditingStudent(null);
-            setEditingStaff(null);
-          }}
-          className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'kelulusan'
-              ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <GraduationCap className="w-4 h-4 text-amber-500" />
-          <span>Kelulusan & SKL (Kelas IX)</span>
-          <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black">
-            {countGrade9}
-          </span>
-        </button>
+            <button
+              onClick={() => {
+                setActiveTab('kelulusan');
+                setEditingStudent(null);
+                setEditingStaff(null);
+              }}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'kelulusan'
+                  ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 text-amber-500" />
+              <span>Kelulusan & SKL (Kelas IX)</span>
+              <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+                {countGrade9}
+              </span>
+            </button>
 
-        <button
-          onClick={() => {
-            setActiveTab('profil_sekolah');
-            setEditingStudent(null);
-            setEditingStaff(null);
-          }}
-          className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'profil_sekolah'
-              ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Building2 className="w-4 h-4 text-emerald-600" />
-          <span>Edit Profil Sekolah</span>
-          <span className="bg-emerald-100 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-black">
-            Lengkap
-          </span>
-        </button>
+            <button
+              onClick={() => {
+                setActiveTab('profil_sekolah');
+                setEditingStudent(null);
+                setEditingStaff(null);
+              }}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'profil_sekolah'
+                  ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <span>Edit Profil Sekolah</span>
+              <span className="bg-emerald-100 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+                Lengkap
+              </span>
+            </button>
 
-        <button
-          onClick={() => {
-            setActiveTab('pengaturan');
-            setEditingStudent(null);
-            setEditingStaff(null);
-          }}
-          className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'pengaturan'
-              ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Settings className="w-4 h-4 text-slate-600" />
-          <span>Pengaturan & Motivasi</span>
-        </button>
+            <button
+              onClick={() => {
+                setActiveTab('pengaturan');
+                setEditingStudent(null);
+                setEditingStaff(null);
+              }}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'pengaturan'
+                  ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Settings className="w-4 h-4 text-slate-600" />
+              <span>Pengaturan & Motivasi</span>
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => {
