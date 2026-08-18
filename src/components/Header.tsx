@@ -125,24 +125,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Login Siswa</span>
               </button>
             )}
-
-            {/* User Profile & Role Switch Button */}
-            <button
-              onClick={onOpenRoleSwitcher}
-              className="inline-flex items-center gap-2 px-2.5 py-1 bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-white rounded text-xs transition-all active:scale-95 flex-shrink-0 shadow-xs"
-              title="Klik untuk mengganti Peran (Admin / Guru / Siswa)"
-            >
-              <div className="flex items-center gap-1.5">
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border flex items-center gap-1 ${badge.style}`}>
-                  {badge.icon}
-                  <span>{badge.label}</span>
-                </span>
-                <span className="font-bold text-xs truncate max-w-[110px] sm:max-w-[140px]" title={currentUser.name}>
-                  {currentUser.name.split(' ')[0]}
-                </span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-indigo-300" />
-            </button>
           </div>
         </div>
       </div>
@@ -220,11 +202,6 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
           </nav>
-
-          <div className="hidden md:flex items-center gap-2 text-xs text-indigo-200 py-1.5 border-l border-indigo-800 pl-4 font-medium">
-            <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span>Login: <strong className="text-amber-300 font-bold">{currentUser.roleLabel}</strong></span>
-          </div>
         </div>
       </div>
     </header>
