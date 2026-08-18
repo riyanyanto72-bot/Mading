@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "SchoolSettings": {
+      "collection": "settings",
+      "fields": {
+        "school_name": "string",
+        "dinas_name": "string",
+        "npsn": "string",
+        "address": "string",
+        "phone": "string",
+        "email": "string",
+        "website": "string",
+        "principal_name": "string",
+        "principal_nip": "string",
+        "academic_year": "string",
+        "announcement_release_time": "string",
+        "is_release_unlocked": "boolean",
+        "logo_url": "string",
+        "graduation_motivation": "string",
+        "skl_custom_global_drive_url": "string",
+        "footer_copyright": "string",
+        "hero_badge": "string",
+        "hero_title": "string",
+        "hero_description": "string",
+        "hero_btn_submit_text": "string",
+        "hero_btn_submit_show": "boolean",
+        "hero_btn_grad_text": "string",
+        "hero_btn_grad_show": "boolean",
+        "profile": {
+          "vision": "string",
+          "mission": "array",
+          "welcome_message": "string",
+          "principal_photo_url": "string",
+          "history": "string",
+          "facilities": "array",
+          "accreditation": "string",
+          "curriculum": "string",
+          "motto": "string",
+          "hero_image_url": "string"
+        }
+      }
+    },
+    "MadingPost": {
+      "collection": "mading_posts",
+      "fields": {
+        "id": "string",
+        "title": "string",
+        "category": "string",
+        "author": "string",
+        "authorRole": "string",
+        "date": "string",
+        "content": "string",
+        "excerpt": "string",
+        "coverImage": "string",
+        "tags": "array",
+        "likes": "number",
+        "comments": "array",
+        "pinned": "boolean",
+        "status": "string"
+      }
+    },
+    "StudentGraduation": {
+      "collection": "students",
+      "fields": {
+        "id": "string",
+        "nisn": "string",
+        "nis": "string",
+        "full_name": "string",
+        "class_name": "string",
+        "grade_level": "string",
+        "birth_date": "string",
+        "birth_place": "string",
+        "parent_name": "string",
+        "status": "string",
+        "note": "string",
+        "password": "string",
+        "skl_custom_url": "string",
+        "avatar": "string"
+      }
+    },
+    "StaffAccount": {
+      "collection": "staff_accounts",
+      "fields": {
+        "id": "string",
+        "name": "string",
+        "role": "string",
+        "roleLabel": "string",
+        "identifier": "string",
+        "nip": "string",
+        "email": "string",
+        "username": "string",
+        "password": "string",
+        "subject": "string",
+        "avatar": "string"
+      }
+    }
+  }
+}

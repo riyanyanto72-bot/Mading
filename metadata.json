@@ -1,0 +1,6 @@
+{
+  "name": "Mading Digital & Pengumuman Kelulusan Sekolah",
+  "description": "Dashboard mading digital sekolah, portal pengumuman kelulusan Kelas IX terintegrasi link SKL, sistem login siswa per kelas (VII, VIII, IX), dan panel manajemen kredensial admin.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
