@@ -2657,14 +2657,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => setActiveTab('pengaturan')}
-                className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                title="Edit Banner Judul, Deskripsi & Tombol Header Mading"
-              >
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span>Edit Banner & Tombol</span>
-              </button>
+              {!isGuru && (
+                <button
+                  onClick={() => setActiveTab('pengaturan')}
+                  className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="Edit Banner Judul, Deskripsi & Tombol Header Mading"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>Edit Banner & Tombol</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setIsNewPostModalOpen(true)}
