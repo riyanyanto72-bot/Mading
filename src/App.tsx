@@ -113,26 +113,20 @@ export default function App() {
 
     // 3. Real-time subscriber for Mading Posts
     const unsubMading = subscribeMadingPosts((newPosts) => {
-      if (newPosts.length > 0) {
-        setPosts(newPosts);
-        localStorage.setItem('school_mading_posts_v1', JSON.stringify(newPosts));
-      }
+      setPosts(newPosts);
+      localStorage.setItem('school_mading_posts_v1', JSON.stringify(newPosts));
     });
 
     // 4. Real-time subscriber for Students
     const unsubStudents = subscribeStudents((newStudents) => {
-      if (newStudents.length > 0) {
-        setStudents(newStudents);
-        localStorage.setItem('school_students_v1', JSON.stringify(newStudents));
-      }
+      setStudents(newStudents);
+      localStorage.setItem('school_students_v1', JSON.stringify(newStudents));
     });
 
     // 5. Real-time subscriber for Staff Accounts (Guru & Admin)
     const unsubStaff = subscribeStaffAccounts((newStaff) => {
-      if (newStaff.length > 0) {
-        setStaffAccounts(newStaff);
-        localStorage.setItem('school_staff_accounts_v1', JSON.stringify(newStaff));
-      }
+      setStaffAccounts(newStaff);
+      localStorage.setItem('school_staff_accounts_v1', JSON.stringify(newStaff));
     });
 
     return () => {
