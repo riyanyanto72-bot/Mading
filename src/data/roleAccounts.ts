@@ -9,7 +9,7 @@ export const initialStaffAccounts: StaffAccount[] = [
     identifier: 'Operator IT & Tata Usaha',
     username: 'admin',
     password: 'admin123',
-    email: 'admin@sekolah.sch.id',
+    email: 'riyanyanto72@admin.smp.belajar.id',
     nip: '19850315 201001 1 012',
     subject: 'Kepala Lab Komputer & Operator Sistem',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
@@ -64,6 +64,7 @@ export const presetAccounts: UserAccount[] = [
     identifier: 'Operator IT & Tata Usaha',
     username: 'admin',
     password: 'admin123',
+    email: 'riyanyanto72@admin.smp.belajar.id',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
   },
   {
@@ -84,6 +85,8 @@ export const presetAccounts: UserAccount[] = [
     identifier: 'NISN: 0061234567 | Kelas IX',
     class_name: 'IX-A',
     nisn: '0061234567',
+    username: '0061234567',
+    password: 'siswa123',
     avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
   },
   {
@@ -94,6 +97,8 @@ export const presetAccounts: UserAccount[] = [
     identifier: 'NISN: 0077889901 | Kelas VIII',
     class_name: 'VIII-B',
     nisn: '0077889901',
+    username: '0077889901',
+    password: 'siswa123',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
   },
   {
@@ -104,6 +109,8 @@ export const presetAccounts: UserAccount[] = [
     identifier: 'NISN: 0088991122 | Kelas VII',
     class_name: 'VII-A',
     nisn: '0088991122',
+    username: '0088991122',
+    password: 'siswa123',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
   },
 ];

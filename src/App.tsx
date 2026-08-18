@@ -10,9 +10,9 @@ import { GraduationPortal } from './components/Graduation/GraduationPortal';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { SchoolProfileView } from './components/Profile/SchoolProfileView';
 import { StudentProfileView } from './components/StudentPortal/StudentProfileView';
-import { StudentLoginModal } from './components/StudentPortal/StudentLoginModal';
 import { RoleSwitcherModal } from './components/Auth/RoleSwitcherModal';
 import { Footer } from './components/Footer';
+import { ShieldAlert } from 'lucide-react';
 import {
   initializeFirestoreDataIfEmpty,
   subscribeSchoolSettings,
@@ -23,6 +23,7 @@ import {
   likeMadingPostInFirestore,
   addCommentToMadingPostInFirestore,
   subscribeStudents,
+  saveStudentToFirestore,
   batchImportStudentsToFirestore,
   deleteStudentFromFirestore,
   subscribeStaffAccounts,
@@ -30,6 +31,15 @@ import {
   deleteStaffAccountFromFirestore,
   resetFirestoreToDemoData,
 } from './services/firebaseService';
+
+const GUEST_ACCOUNT: UserAccount = {
+  id: 'guest',
+  name: 'Tamu / Pengunjung',
+  role: 'tamu',
+  roleLabel: 'Pengunjung Publik',
+  identifier: 'Tamu',
+  avatar: '',
+};
 
 export default function App() {
   // Current logged in user / active role simulation
@@ -39,10 +49,10 @@ export default function App() {
       try {
         return JSON.parse(saved);
       } catch {
-        return presetAccounts[0];
+        return GUEST_ACCOUNT;
       }
     }
-    return presetAccounts[0]; // Default: Admin
+    return GUEST_ACCOUNT; // Default: Tamu
   });
 
   // Navigation active tab
@@ -83,7 +93,6 @@ export default function App() {
   const [selectedPost, setSelectedPost] = useState<MadingPost | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
-  const [isStudentLoginOpen, setIsStudentLoginOpen] = useState(false);
   const [adminInitialTab, setAdminInitialTab] = useState<'accounts' | 'kelulusan' | 'profil_sekolah' | 'pengaturan' | 'mading'>('accounts');
 
   // ==========================================
@@ -97,8 +106,8 @@ export default function App() {
     const unsubSettings = subscribeSchoolSettings((newSettings) => {
       setSettings(newSettings);
       localStorage.setItem('school_settings_v1', JSON.stringify(newSettings));
-      if (newSettings?.schoolName) {
-        document.title = `${newSettings.schoolName} - Portal Mading & Kelulusan`;
+      if (newSettings?.school_name) {
+        document.title = `${newSettings.school_name} - Portal Mading & Kelulusan`;
       }
     });
 
@@ -201,6 +210,30 @@ export default function App() {
     });
   };
 
+  // Handle Update Student Photo (Directly by student, synced to Firestore & Local state)
+  const handleUpdateStudentPhoto = (studentId: string, newAvatar: string) => {
+    const updatedStudents = students.map((s) => (s.id === studentId ? { ...s, avatar: newAvatar } : s));
+    setStudents(updatedStudents);
+    localStorage.setItem('school_students_v1', JSON.stringify(updatedStudents));
+
+    const targetStudent = updatedStudents.find((s) => s.id === studentId);
+    if (targetStudent) {
+      saveStudentToFirestore(targetStudent).catch((err) => {
+        console.error('Failed to save updated student photo to Firestore:', err);
+      });
+    }
+
+    // If active currentUser is this student, also update their currentUser profile avatar
+    if (currentUser.role === 'siswa') {
+      const updatedUser: UserAccount = {
+        ...currentUser,
+        avatar: newAvatar,
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('school_current_user_v1', JSON.stringify(updatedUser));
+    }
+  };
+
   // Handle Like Mading Post (Local + Cloud Firestore)
   const handleLikePost = (postId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -262,12 +295,15 @@ export default function App() {
     excerpt: string;
     cover_image?: string;
   }) => {
+    // Siswa submissions need approval ('pending'), Guru and Admin auto-approve ('published')
+    const initialStatus = currentUser.role === 'siswa' ? 'pending' : 'published';
+
     const newPost: MadingPost = {
       id: 'post-' + Date.now(),
       title: newPostData.title,
       category: newPostData.category,
       author: newPostData.author,
-      authorRole: currentUser.role === 'admin' ? 'Administrator' : currentUser.role === 'guru' ? 'Guru' : `Siswa (${newPostData.class_grade || 'Siswa'})`,
+      authorRole: currentUser.role === 'admin' ? 'Administrator' : currentUser.role === 'guru' ? 'Guru' : `Siswa ${currentUser.class_name ? `(Kelas ${currentUser.class_name})` : ''}`,
       date: new Date().toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
@@ -280,12 +316,17 @@ export default function App() {
       likes: 0,
       comments: [],
       pinned: false,
-      status: 'published',
+      status: initialStatus,
     };
 
     setPosts([newPost, ...posts]);
     saveMadingPostToFirestore(newPost).catch(console.error);
     setIsSubmitModalOpen(false);
+
+    if (initialStatus === 'pending') {
+      alert('Karya Anda berhasil dikirim dan sedang menunggu persetujuan (moderasi) dari Guru / Admin.');
+    }
+    
     setActiveTab('mading');
   };
 
@@ -328,9 +369,30 @@ export default function App() {
     setActiveTab('student-portal');
   };
 
-  // Student portal logout
-  const handleStudentLogout = () => {
-    setCurrentUser(presetAccounts[0]); // Reset to admin/operator
+  // Global logout
+  const handleLogout = () => {
+    setCurrentUser(GUEST_ACCOUNT);
+    localStorage.removeItem('school_current_user_v1');
+    if (activeTab === 'admin' || activeTab === 'student-portal' || activeTab === 'graduation') {
+      setActiveTab('mading');
+    }
+  };
+
+  const handleApprovePost = (postId: string) => {
+    if (confirm('Setujui karya ini untuk dipublikasikan di mading utama?')) {
+      const updatedPosts = posts.map((p) => (p.id === postId ? { ...p, status: 'approved' as const } : p));
+      setPosts(updatedPosts);
+      const postToUpdate = updatedPosts.find((p) => p.id === postId);
+      if (postToUpdate) saveMadingPostToFirestore(postToUpdate).catch(console.error);
+    }
+  };
+
+  const handleRejectPost = (postId: string) => {
+    if (confirm('Tolak dan hapus karya ini? Karya akan dihapus secara permanen.')) {
+      const updatedPosts = posts.filter((p) => p.id !== postId);
+      setPosts(updatedPosts);
+      deleteMadingPostFromFirestore(postId).catch(console.error);
+    }
   };
 
   return (
@@ -345,7 +407,7 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         currentUser={currentUser}
         onOpenRoleSwitcher={() => setIsRoleSwitcherOpen(true)}
-        onOpenStudentLogin={() => setIsStudentLoginOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main App Content View Area */}
@@ -355,10 +417,13 @@ export default function App() {
             posts={posts}
             searchQuery={searchQuery}
             settings={settings}
+            currentUser={currentUser}
             onSelectPost={(post) => setSelectedPost(post)}
             onLikePost={handleLikePost}
             onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
             onGoToGraduation={() => setActiveTab('graduation')}
+            onApprovePost={handleApprovePost}
+            onRejectPost={handleRejectPost}
           />
         )}
 
@@ -397,38 +462,57 @@ export default function App() {
             onSelectPost={(post) => setSelectedPost(post)}
             onGoToGraduation={() => setActiveTab('graduation')}
             onLoginSuccess={(acc) => setCurrentUser(acc)}
-            onLogout={handleStudentLogout}
-            onOpenStudentLoginModal={() => setIsStudentLoginOpen(true)}
+            onLogout={handleLogout}
+            onUpdateStudentPhoto={handleUpdateStudentPhoto}
           />
         )}
 
         {activeTab === 'admin' && (
-          <AdminDashboard
-            settings={settings}
-            onUpdateSettings={handleUpdateSettings}
-            posts={posts}
-            onUpdatePosts={handleUpdatePosts}
-            students={students}
-            onUpdateStudents={handleUpdateStudents}
-            staffAccounts={staffAccounts}
-            onUpdateStaffAccounts={handleUpdateStaffAccounts}
-            onResetDemoData={handleResetDemoData}
-            currentUser={currentUser}
-            onOpenRoleSwitcher={() => setIsRoleSwitcherOpen(true)}
-            onDirectLoginAsStudent={handleDirectLoginAsStudent}
-            onViewPublicProfile={() => setActiveTab('profil')}
-            initialTab={adminInitialTab}
-          />
+          currentUser.role === 'admin' ? (
+            <AdminDashboard
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              posts={posts}
+              onUpdatePosts={handleUpdatePosts}
+              students={students}
+              onUpdateStudents={handleUpdateStudents}
+              staffAccounts={staffAccounts}
+              onUpdateStaffAccounts={handleUpdateStaffAccounts}
+              onResetDemoData={handleResetDemoData}
+              currentUser={currentUser}
+              onOpenRoleSwitcher={() => setIsRoleSwitcherOpen(true)}
+              onDirectLoginAsStudent={handleDirectLoginAsStudent}
+              onViewPublicProfile={() => setActiveTab('profil')}
+              initialTab={adminInitialTab}
+            />
+          ) : (
+            <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-4">
+              <div className="w-12 h-12 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">Akses Dibatasi</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Panel Administrator hanya dapat diakses oleh akun resmi Administrator Sekolah.
+              </p>
+              <button
+                onClick={() => setActiveTab('mading')}
+                className="px-5 py-2.5 bg-indigo-950 hover:bg-indigo-900 text-amber-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Kembali ke Mading Utama
+              </button>
+            </div>
+          )
         )}
       </main>
 
       {/* Footer */}
-      <Footer settings={settings} onSelectTab={setActiveTab} />
+      <Footer settings={settings} onSelectTab={setActiveTab} currentUser={currentUser} />
 
       {/* Modals */}
       {/* Mading Post Reading Modal */}
       <MadingDetailModal
         post={selectedPost}
+        currentUser={currentUser}
         onClose={() => setSelectedPost(null)}
         onLike={(postId) => handleLikePost(postId)}
         onAddComment={handleAddComment}
@@ -447,21 +531,17 @@ export default function App() {
         isOpen={isRoleSwitcherOpen}
         onClose={() => setIsRoleSwitcherOpen(false)}
         currentUser={currentUser}
-        onSelectAccount={(account) => setCurrentUser(account)}
+        onSelectAccount={(account) => {
+          setCurrentUser(account);
+          if (account.role === 'siswa') {
+            setActiveTab('student-portal');
+          }
+        }}
         staffAccounts={staffAccounts}
+        students={students}
       />
 
-      {/* Dedicated Student Login Modal */}
-      <StudentLoginModal
-        isOpen={isStudentLoginOpen}
-        onClose={() => setIsStudentLoginOpen(false)}
-        students={students}
-        settings={settings}
-        onLoginSuccess={(account) => {
-          setCurrentUser(account);
-          setActiveTab('student-portal');
-        }}
-      />
+      {/* Global Modals (Alerts, Overlays) can be added here if needed */}
     </div>
   );
 }

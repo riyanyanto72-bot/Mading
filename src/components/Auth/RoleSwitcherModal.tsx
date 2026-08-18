@@ -1,7 +1,7 @@
-import React from 'react';
-import { UserAccount, UserRole, StaffAccount } from '../../types';
-import { presetAccounts, roleCapabilities } from '../../data/roleAccounts';
-import { X, Shield, BookOpen, GraduationCap, CheckCircle2, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { UserAccount, StaffAccount, StudentGraduation } from '../../types';
+import { Shield, X, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { presetAccounts } from '../../data/roleAccounts';
 
 interface RoleSwitcherModalProps {
   isOpen: boolean;
@@ -9,50 +9,122 @@ interface RoleSwitcherModalProps {
   currentUser: UserAccount;
   onSelectAccount: (account: UserAccount) => void;
   staffAccounts?: StaffAccount[];
+  students?: StudentGraduation[];
 }
 
 export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
   isOpen,
   onClose,
-  currentUser,
   onSelectAccount,
   staffAccounts,
+  students,
 }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
   if (!isOpen) return null;
 
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'admin':
-        return <Shield className="w-5 h-5" />;
-      case 'guru':
-        return <BookOpen className="w-5 h-5" />;
-      case 'siswa':
-        return <GraduationCap className="w-5 h-5" />;
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanInput = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // 1. Check in Staff Accounts (Admin & Guru)
+    const activeStaff = staffAccounts && staffAccounts.length > 0
+      ? staffAccounts
+      : (presetAccounts.filter((a) => a.role === 'admin' || a.role === 'guru') as unknown as StaffAccount[]);
+
+    const matchedStaff = activeStaff.find(
+      (st) =>
+        ((st.email && st.email.toLowerCase() === cleanInput) ||
+         (st.username && st.username.toLowerCase() === cleanInput) ||
+         (st.nip && st.nip.toLowerCase() === cleanInput) ||
+         (st.nip && st.nip.replace(/\s+/g, '') === cleanInput.replace(/\s+/g, ''))) &&
+        (st.password || 'admin123') === cleanPassword
+    );
+
+    if (matchedStaff) {
+      const staffUserAccount: UserAccount = {
+        id: matchedStaff.id,
+        name: matchedStaff.full_name || matchedStaff.name,
+        role: matchedStaff.role,
+        roleLabel: matchedStaff.role === 'admin' ? 'Administrator Sekolah' : (matchedStaff.subject || 'Dewan Guru'),
+        identifier: matchedStaff.identifier || (matchedStaff.nip ? `NIP. ${matchedStaff.nip}` : matchedStaff.username),
+        nip: matchedStaff.nip,
+        username: matchedStaff.username,
+        password: matchedStaff.password,
+        email: matchedStaff.email,
+        avatar: matchedStaff.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+      };
+      onSelectAccount(staffUserAccount);
+      onClose();
+      return;
     }
+
+    // 2. Check in Students List (from Admin Panel / Firestore database)
+    if (students && students.length > 0) {
+      const matchedStudent = students.find((std) => {
+        const nisnMatch = std.nisn && (
+          std.nisn.toLowerCase() === cleanInput ||
+          std.nisn.replace(/\s+/g, '') === cleanInput.replace(/\s+/g, '')
+        );
+        const nisMatch = std.nis && (
+          std.nis.toLowerCase() === cleanInput ||
+          std.nis.replace(/\s+/g, '') === cleanInput.replace(/\s+/g, '')
+        );
+        const nameMatch = std.full_name && std.full_name.toLowerCase() === cleanInput;
+        
+        if (!nisnMatch && !nisMatch && !nameMatch) return false;
+
+        const stdExpectedPass = (std.password || 'siswa').trim();
+        return stdExpectedPass === cleanPassword;
+      });
+
+      if (matchedStudent) {
+        const studentUserAccount: UserAccount = {
+          id: matchedStudent.id,
+          name: matchedStudent.full_name,
+          role: 'siswa',
+          roleLabel: `Siswa Kelas ${matchedStudent.class_name || 'IX'}`,
+          identifier: `NISN: ${matchedStudent.nisn} | Kelas ${matchedStudent.class_name || 'IX'}`,
+          nisn: matchedStudent.nisn,
+          class_name: matchedStudent.class_name,
+          username: matchedStudent.nisn,
+          password: matchedStudent.password || 'siswa',
+          avatar: matchedStudent.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        };
+        onSelectAccount(studentUserAccount);
+        onClose();
+        return;
+      }
+    }
+
+    // 3. Fallback check in presetAccounts
+    const matchedPreset = presetAccounts.find(
+      (acc) =>
+        ((acc.email && acc.email.toLowerCase() === cleanInput) ||
+         (acc.username && acc.username.toLowerCase() === cleanInput) ||
+         (acc.nisn && acc.nisn.toLowerCase() === cleanInput) ||
+         (acc.nip && acc.nip.toLowerCase() === cleanInput)) &&
+        acc.password === cleanPassword
+    );
+
+    if (matchedPreset) {
+      onSelectAccount(matchedPreset);
+      onClose();
+      return;
+    }
+
+    setError('Email/NISN atau Password tidak valid.');
   };
-
-  // Build combined accounts list
-  const activeStaffAsUserAccounts: UserAccount[] = (staffAccounts && staffAccounts.length > 0)
-    ? staffAccounts.map((st) => ({
-        id: st.id,
-        name: st.full_name || st.name,
-        role: st.role,
-        roleLabel: st.role === 'admin' ? 'Administrator Sekolah' : (st.subject || 'Dewan Guru'),
-        identifier: st.identifier || (st.nip ? `NIP. ${st.nip}` : st.username),
-        nip: st.nip,
-        username: st.username,
-        password: st.password,
-        email: st.email,
-        avatar: st.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-      }))
-    : presetAccounts.filter((a) => a.role === 'admin' || a.role === 'guru');
-
-  const studentAccounts = presetAccounts.filter((a) => a.role === 'siswa');
-  const allDisplayAccounts = [...activeStaffAsUserAccounts, ...studentAccounts];
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border-2 border-indigo-950 my-8">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-2 border-indigo-950 my-8">
         
         {/* Header */}
         <div className="p-4 sm:p-5 bg-indigo-950 text-white flex items-center justify-between border-b-2 border-amber-400">
@@ -61,8 +133,8 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight">Pilih Peran Pengguna (Role Simulation)</h2>
-              <p className="text-xs text-indigo-200">Ganti peran untuk menguji hak akses Admin, Guru, dan Siswa</p>
+              <h2 className="text-base sm:text-lg font-black tracking-tight">Portal Login</h2>
+              <p className="text-xs text-indigo-200">Silakan masukkan kredensial Anda</p>
             </div>
           </div>
           <button
@@ -74,124 +146,76 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-5 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          
-          {/* Active User Status Banner */}
-          <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-11 h-11 rounded-full object-cover border-2 border-amber-400"
-              />
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded">
-                  Peran Aktif Saat Ini
-                </span>
-                <h4 className="font-extrabold text-sm text-slate-900">{currentUser.name}</h4>
-                <p className="text-xs text-slate-600 font-mono">{currentUser.identifier}</p>
-              </div>
+        <form onSubmit={handleLogin} className="p-5 sm:p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg flex items-center gap-2 text-sm font-medium">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
             </div>
-            <span className="text-xs font-black px-2.5 py-1 rounded bg-amber-400 text-indigo-950 border border-amber-300">
-              {currentUser.role.toUpperCase()}
-            </span>
+          )}
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              Email Admin atau NISN Siswa
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Masukkan Email atau NISN"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+              />
+            </div>
           </div>
 
-          {/* Preset Roles Cards */}
-          <div className="space-y-3">
-            <h3 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">
-              Pilihan Akun & Hak Akses:
-            </h3>
-
-            {allDisplayAccounts.map((account) => {
-              const isCurrent = account.id === currentUser.id;
-              const cap = roleCapabilities[account.role];
-
-              return (
-                <div
-                  key={account.id}
-                  onClick={() => {
-                    onSelectAccount(account);
-                    onClose();
-                  }}
-                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                    isCurrent
-                      ? 'border-indigo-900 bg-indigo-50/70 shadow-sm ring-2 ring-indigo-900/10'
-                      : 'border-slate-200 bg-white hover:border-indigo-400 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start gap-3.5 flex-1">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold flex-shrink-0 mt-0.5 ${
-                        account.role === 'admin'
-                          ? 'bg-amber-400 text-indigo-950'
-                          : account.role === 'guru'
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-blue-600 text-white'
-                      }`}
-                    >
-                      {getRoleIcon(account.role)}
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="font-black text-sm text-slate-900">{account.name}</h4>
-                        <span
-                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase ${cap.badgeColor}`}
-                        >
-                          {account.roleLabel}
-                        </span>
-                        {isCurrent && (
-                          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-0.5">
-                            <CheckCircle2 className="w-3 h-3" /> Sedang Digunakan
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        {cap.description}
-                      </p>
-
-                      <ul className="text-[11px] text-slate-500 list-disc list-inside space-y-0.5 pt-1">
-                        {cap.permissions.slice(0, 2).map((perm, idx) => (
-                          <li key={idx} className="leading-tight">{perm}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all flex-shrink-0 uppercase tracking-wider ${
-                      isCurrent
-                        ? 'bg-indigo-950 text-amber-300'
-                        : 'bg-slate-100 hover:bg-indigo-900 hover:text-white text-slate-700'
-                    }`}
-                  >
-                    <span>{isCurrent ? 'Aktif' : 'Gunakan Akun'}</span>
-                    {!isCurrent && <ArrowRight className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              );
-            })}
+          <div className="space-y-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Masukkan password Anda"
+                className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-        </div>
+          <button
+            type="submit"
+            className="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-colors shadow-sm"
+          >
+            Masuk ke Sistem
+          </button>
+        </form>
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <p className="text-[11px]">
-            * Peran ini mengendalikan menu, tombol input, aksi hapus, dan hak akses pengeditan di seluruh aplikasi.
+            * Pastikan kredensial Anda benar.
           </p>
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg text-xs transition-colors"
           >
-            Tutup
+            Batal
           </button>
         </div>
-
       </div>
     </div>
   );

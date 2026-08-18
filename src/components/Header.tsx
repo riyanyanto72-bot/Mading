@@ -13,7 +13,7 @@ interface HeaderProps {
   setSearchQuery: (q: string) => void;
   currentUser: UserAccount;
   onOpenRoleSwitcher: () => void;
-  onOpenStudentLogin?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchQuery,
   currentUser,
   onOpenRoleSwitcher,
-  onOpenStudentLogin,
+  onLogout,
 }) => {
   const getRoleBadge = () => {
     switch (currentUser.role) {
@@ -46,6 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
           icon: <GraduationCap className="w-3.5 h-3.5" />,
           label: 'Siswa',
           style: 'bg-blue-600 text-white border-blue-400',
+        };
+      default:
+        return {
+          icon: <UserCircle className="w-3.5 h-3.5" />,
+          label: 'Tamu',
+          style: 'bg-slate-600 text-white border-slate-500',
         };
     }
   };
@@ -104,26 +110,49 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            {/* Quick Submit Work Button */}
-            <button
-              onClick={onOpenSubmitModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-extrabold rounded text-xs tracking-wider uppercase shadow-xs transition-all active:scale-95 flex-shrink-0 border border-amber-300 cursor-pointer"
-              title="Kirim artikel/karya siswa"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Kirim Karya</span>
-            </button>
-
-            {/* Quick Student Login Portal Button */}
-            {onOpenStudentLogin && (
+            {/* Quick Submit Work Button - Hidden for Tamu */}
+            {currentUser.role !== 'tamu' && (
               <button
-                onClick={onOpenStudentLogin}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded text-xs tracking-wider uppercase shadow-xs transition-all active:scale-95 flex-shrink-0 border border-emerald-400 cursor-pointer"
-                title="Buka Portal Login Akun Siswa (NISN & Sandi)"
+                onClick={onOpenSubmitModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-extrabold rounded text-xs tracking-wider uppercase shadow-xs transition-all active:scale-95 flex-shrink-0 border border-amber-300 cursor-pointer"
+                title="Kirim artikel/karya siswa"
               >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>Login Siswa</span>
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Kirim Karya</span>
               </button>
+            )}
+
+            {/* Login / Logout Button */}
+            {currentUser.role === 'tamu' ? (
+              <button
+                onClick={onOpenRoleSwitcher}
+                className="inline-flex items-center gap-1.5 px-4 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded text-xs tracking-wider uppercase shadow-xs transition-all active:scale-95 flex-shrink-0 border border-emerald-400 cursor-pointer"
+                title="Masuk ke Sistem"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Login</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-900 border border-indigo-700 text-white rounded text-xs flex-shrink-0 shadow-xs">
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border flex items-center gap-1 ${badge.style}`}>
+                    {badge.icon}
+                    <span>{badge.label}</span>
+                  </span>
+                  <span className="font-bold text-xs truncate max-w-[110px] sm:max-w-[140px]" title={currentUser.name}>
+                    {currentUser.name.split(' ')[0]}
+                  </span>
+                </div>
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500 hover:bg-rose-400 text-white font-extrabold rounded text-xs tracking-wider uppercase shadow-xs transition-all active:scale-95 flex-shrink-0 border border-rose-400 cursor-pointer"
+                    title="Keluar"
+                  >
+                    <span>Logout</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -146,22 +175,24 @@ export const Header: React.FC<HeaderProps> = ({
               Mading Digital
             </button>
 
-            <button
-              onClick={() => setActiveTab('graduation')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap relative ${
-                activeTab === 'graduation'
-                  ? 'bg-amber-400 text-indigo-950 shadow-xs'
-                  : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
-              }`}
-              title="Portal Pengumuman Kelulusan Khusus Siswa Kelas IX"
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>Pengumuman Kelulusan (Kelas IX)</span>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
-              </span>
-            </button>
+            {currentUser.role !== 'tamu' && (
+              <button
+                onClick={() => setActiveTab('graduation')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap relative ${
+                  activeTab === 'graduation'
+                    ? 'bg-amber-400 text-indigo-950 shadow-xs'
+                    : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
+                }`}
+                title="Portal Pengumuman Kelulusan Khusus Siswa Kelas IX"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Pengumuman Kelulusan (Kelas IX)</span>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                </span>
+              </button>
+            )}
 
             <button
               onClick={() => setActiveTab('profil')}
@@ -175,17 +206,21 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Profil Sekolah</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'admin'
-                  ? 'bg-amber-400 text-indigo-950 shadow-xs'
-                  : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
-              }`}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              {currentUser.role === 'admin' ? 'Panel Admin' : currentUser.role === 'guru' ? 'Panel Guru (Nilai)' : 'Panel Pengelola'}
-            </button>
+            {/* Tab Panel Admin - Hanya Tampil Untuk Role Admin */}
+            {currentUser.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  activeTab === 'admin'
+                    ? 'bg-amber-400 text-indigo-950 shadow-xs'
+                    : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
+                }`}
+                title="Panel Pengelolaan Administrator Sekolah"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Panel Admin</span>
+              </button>
+            )}
 
             {/* Tab Profil Siswa (Diletakkan di Paling Kanan) */}
             <button

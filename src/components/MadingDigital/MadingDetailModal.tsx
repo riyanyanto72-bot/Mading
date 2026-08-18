@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { MadingPost } from '../../types';
+import { MadingPost, UserAccount } from '../../types';
 import { X, Heart, MessageSquare, Calendar, User, Tag, Send, Share2, Pin, CheckCircle2 } from 'lucide-react';
 
 interface MadingDetailModalProps {
   post: MadingPost | null;
+  currentUser: UserAccount;
   onClose: () => void;
   onLike: (postId: string) => void;
   onAddComment: (postId: string, commentAuthor: string, text: string) => void;
@@ -11,6 +12,7 @@ interface MadingDetailModalProps {
 
 export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
   post,
+  currentUser,
   onClose,
   onLike,
   onAddComment,
@@ -24,7 +26,7 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    const authorName = commentAuthor.trim() || 'Siswa / Pengunjung';
+    const authorName = currentUser.role !== 'tamu' ? currentUser.name : (commentAuthor.trim() || 'Pengunjung');
     onAddComment(post.id, authorName, commentText.trim());
     setCommentText('');
   };
@@ -104,13 +106,20 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
 
           {/* Actions: Like & Share */}
           <div className="flex items-center justify-between py-3 border-y border-slate-200">
-            <button
-              onClick={() => onLike(post.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold transition-colors active:scale-95"
-            >
-              <Heart className={`w-4 h-4 ${post.likes > 0 ? 'fill-red-600' : ''}`} />
-              <span>Sukai Mading ({post.likes})</span>
-            </button>
+            {currentUser.role !== 'tamu' ? (
+              <button
+                onClick={() => onLike(post.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold transition-colors active:scale-95"
+              >
+                <Heart className={`w-4 h-4 ${post.likes > 0 ? 'fill-red-600' : ''}`} />
+                <span>Sukai Mading ({post.likes})</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-lg text-sm font-medium border border-slate-200 cursor-not-allowed" title="Login untuk menyukai">
+                <Heart className="w-4 h-4" />
+                <span>Sukai ({post.likes})</span>
+              </div>
+            )}
 
             <button
               onClick={handleShare}
@@ -157,34 +166,31 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
             </div>
 
             {/* Add Comment Form */}
-            <form onSubmit={handleSubmitComment} className="space-y-2 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Nama Lengkap / Kelas (opsional)"
-                  value={commentAuthor}
-                  onChange={(e) => setCommentAuthor(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                />
+            {currentUser.role !== 'tamu' ? (
+              <form onSubmit={handleSubmitComment} className="space-y-2 pt-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Tulis komentar atau apresiasi karya ini..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold rounded-lg text-xs sm:text-sm flex items-center gap-1.5 transition-all flex-shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Kirim</span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-center mt-2">
+                <p className="text-xs text-indigo-700 font-medium">Anda harus login untuk memberikan komentar dan menyukai postingan ini.</p>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  placeholder="Tulis komentar atau apresiasi karya ini..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold rounded-lg text-xs sm:text-sm flex items-center gap-1.5 transition-all flex-shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Kirim</span>
-                </button>
-              </div>
-            </form>
+            )}
           </div>
 
         </div>

@@ -72,14 +72,19 @@ interface AdminDashboardProps {
 }
 
 const getSafeReleaseTimeInput = (timeStr?: string): string => {
+  const formatLocal = (d: Date) => {
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
   if (!timeStr) {
-    return new Date().toISOString().slice(0, 16);
+    return formatLocal(new Date());
   }
   const d = new Date(timeStr);
   if (isNaN(d.getTime())) {
-    return new Date().toISOString().slice(0, 16);
+    return formatLocal(new Date());
   }
-  return d.toISOString().slice(0, 16);
+  return formatLocal(d);
 };
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -434,7 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       status: defaultGrade === 'IX' ? 'LULUS' : 'AKTIF',
       skl_custom_url: '',
       password: 'siswa',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      avatar: '',
     });
   };
 
@@ -1115,11 +1120,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {/* Name & Avatar */}
                           <td className="p-3.5">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={std.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
-                                alt={std.full_name}
-                                className="w-9 h-9 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-                              />
+                              {std.avatar ? (
+                                <img
+                                  src={std.avatar}
+                                  alt={std.full_name}
+                                  className="w-9 h-9 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs flex-shrink-0">
+                                  {std.full_name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                               <div>
                                 <span className="font-extrabold text-slate-900 block leading-snug">
                                   {std.full_name}
@@ -2881,11 +2892,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
 
                       <div className="pt-1 flex items-center gap-3">
-                        <img
-                          src={std.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
-                          alt={std.full_name}
-                          className="w-12 h-12 rounded-xl object-cover border border-slate-300 flex-shrink-0"
-                        />
+                        {std.avatar ? (
+                          <img
+                            src={std.avatar}
+                            alt={std.full_name}
+                            className="w-12 h-12 rounded-xl object-cover border border-slate-300 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-base flex-shrink-0">
+                            {std.full_name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="space-y-0.5 overflow-hidden text-xs">
                           <h4 className="font-black text-slate-900 truncate">{std.full_name}</h4>
                           <p className="font-mono text-slate-600 text-[11px]">NISN: <strong>{std.nisn}</strong></p>

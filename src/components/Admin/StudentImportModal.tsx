@@ -481,7 +481,7 @@ export const StudentImportModal: React.FC<StudentImportModalProps> = ({
       birth_place: r.birth_place || 'Nusantara',
       birth_date: r.birth_date || '2010-01-01',
       parent_name: r.parent_name || '-',
-      avatar: defaultAvatars[i % defaultAvatars.length],
+      avatar: '',
     }));
 
     onImportSuccess(formattedStudents, importMode);

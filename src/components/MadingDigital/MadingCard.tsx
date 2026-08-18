@@ -1,14 +1,17 @@
 import React from 'react';
-import { MadingPost } from '../../types';
-import { Heart, MessageSquare, Pin, Calendar, User, Tag, ArrowRight } from 'lucide-react';
+import { MadingPost, UserAccount } from '../../types';
+import { Heart, MessageSquare, Pin, Calendar, User, Tag, ArrowRight, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface MadingCardProps {
   post: MadingPost;
+  currentUser?: UserAccount;
   onSelect: (post: MadingPost) => void;
   onLike: (postId: string, e: React.MouseEvent) => void;
+  onApprove?: (postId: string, e: React.MouseEvent) => void;
+  onReject?: (postId: string, e: React.MouseEvent) => void;
 }
 
-export const MadingCard: React.FC<MadingCardProps> = ({ post, onSelect, onLike }) => {
+export const MadingCard: React.FC<MadingCardProps> = ({ post, currentUser, onSelect, onLike, onApprove, onReject }) => {
   const categoryColors: Record<string, string> = {
     Pengumuman: 'bg-red-100 text-red-800 border-red-300',
     'Karya Siswa': 'bg-purple-100 text-purple-800 border-purple-300',
@@ -18,18 +21,29 @@ export const MadingCard: React.FC<MadingCardProps> = ({ post, onSelect, onLike }
     Ekstrakurikuler: 'bg-indigo-100 text-indigo-800 border-indigo-300',
   };
 
+  const isPending = post.status === 'pending';
+  const canModerate = isPending && (currentUser?.role === 'admin' || currentUser?.role === 'guru');
+
   return (
     <article
       onClick={() => onSelect(post)}
       className={`group bg-white rounded-xl border transition-all duration-200 hover:shadow-md hover:border-indigo-400 cursor-pointer flex flex-col overflow-hidden relative ${
-        post.pinned ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-xs' : 'border-slate-200/90 shadow-xs'
+        post.pinned ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-xs' : isPending ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200/90 shadow-xs'
       }`}
     >
       {/* Pinned Badge */}
-      {post.pinned && (
+      {post.pinned && !isPending && (
         <div className="absolute top-2.5 left-2.5 z-10 bg-amber-400 text-indigo-950 font-black text-[10px] px-2 py-0.5 rounded flex items-center gap-1 shadow border border-amber-300">
           <Pin className="w-3 h-3 fill-current" />
           <span>SEMATKAN UTAMA</span>
+        </div>
+      )}
+
+      {/* Pending Badge */}
+      {isPending && (
+        <div className="absolute top-2.5 left-2.5 z-10 bg-amber-100 text-amber-800 font-black text-[10px] px-2 py-0.5 rounded flex items-center gap-1 shadow border border-amber-300">
+          <Clock className="w-3 h-3" />
+          <span>MENUNGGU MODERASI</span>
         </div>
       )}
 
@@ -120,6 +134,34 @@ export const MadingCard: React.FC<MadingCardProps> = ({ post, onSelect, onLike }
           </div>
         </div>
       </div>
+
+      {canModerate && onApprove && onReject && (
+        <div className="bg-indigo-950 p-2 sm:p-2.5 flex items-center justify-between gap-2 border-t-2 border-amber-400">
+          <span className="text-[10px] sm:text-xs font-bold text-amber-300">Tindakan Moderasi:</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReject(post.id, e);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-rose-500 hover:bg-rose-400 text-white font-extrabold rounded text-[10px] sm:text-xs tracking-wider uppercase transition-all"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Tolak</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onApprove(post.id, e);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-emerald-500 hover:bg-emerald-400 text-indigo-950 font-extrabold rounded text-[10px] sm:text-xs tracking-wider uppercase transition-all"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>Setujui</span>
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 };

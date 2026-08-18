@@ -23,7 +23,7 @@ export const GraduationPortal: React.FC<GraduationPortalProps> = ({
   const [hasSearched, setHasSearched] = useState(false);
 
   // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [isReleased, setIsReleased] = useState(true);
 
   // Check if current user is class IX
@@ -54,10 +54,11 @@ export const GraduationPortal: React.FC<GraduationPortalProps> = ({
         setTimeLeft(null);
       } else {
         setIsReleased(false);
-        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft({ hours, minutes, seconds });
+        setTimeLeft({ days, hours, minutes, seconds });
       }
     };
 
@@ -109,16 +110,6 @@ export const GraduationPortal: React.FC<GraduationPortalProps> = ({
               >
                 <span>Buka Portal Semua Siswa</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-
-            {onOpenRoleSwitcher && (
-              <button
-                onClick={onOpenRoleSwitcher}
-                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-extrabold rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 border border-amber-300 cursor-pointer"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>Ganti Akun (Simulasi Kelas IX)</span>
               </button>
             )}
           </div>
@@ -243,7 +234,11 @@ export const GraduationPortal: React.FC<GraduationPortalProps> = ({
               Pengumuman akan dibuka otomatis sesuai jadwal pada:
             </p>
 
-            <div className="grid grid-cols-3 gap-2 pt-1 text-indigo-950">
+            <div className="grid grid-cols-4 gap-2 pt-1 text-indigo-950">
+              <div className="bg-amber-400 p-2 rounded text-center border border-amber-300">
+                <span className="block text-xl font-black font-mono">{timeLeft.days}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider">Hari</span>
+              </div>
               <div className="bg-amber-400 p-2 rounded text-center border border-amber-300">
                 <span className="block text-xl font-black font-mono">{timeLeft.hours}</span>
                 <span className="text-[9px] font-bold uppercase tracking-wider">Jam</span>

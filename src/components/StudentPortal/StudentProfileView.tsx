@@ -29,8 +29,13 @@ import {
   User,
   Users,
   MapPin,
-  Download
+  Download,
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  Check
 } from 'lucide-react';
+import { EditStudentPhotoModal } from './EditStudentPhotoModal';
 
 interface StudentProfileViewProps {
   settings: SchoolSettings;
@@ -42,7 +47,7 @@ interface StudentProfileViewProps {
   onGoToGraduation?: () => void;
   onLoginSuccess?: (user: UserAccount) => void;
   onLogout?: () => void;
-  onOpenStudentLoginModal?: () => void;
+  onUpdateStudentPhoto?: (studentId: string, newAvatarUrl: string) => void;
 }
 
 export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
@@ -55,7 +60,7 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
   onGoToGraduation,
   onLoginSuccess,
   onLogout,
-  onOpenStudentLoginModal,
+  onUpdateStudentPhoto,
 }) => {
   // In-portal login form state
   const [nisnInput, setNisnInput] = useState('');
@@ -64,17 +69,35 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
 
+  // Modal & Toast state for student self-service photo
+  const [isEditPhotoModalOpen, setIsEditPhotoModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   const isUserStudent = currentUser.role === 'siswa';
 
   // Find active student data in database if logged in
   const matchedLoggedInStudent = students.find(
-    (s) => s.nisn === currentUser.nisn || (currentUser.name && s.full_name.toLowerCase() === currentUser.name.toLowerCase())
+    (s) =>
+      s.id === currentUser.id ||
+      (currentUser.nisn && s.nisn && s.nisn.replace(/\s+/g, '') === currentUser.nisn.replace(/\s+/g, '')) ||
+      (currentUser.name && s.full_name && s.full_name.trim().toLowerCase() === currentUser.name.trim().toLowerCase())
   );
 
   const isClassIX = (cls?: string) => {
     if (!cls) return false;
     const clean = cls.toUpperCase();
     return clean.startsWith('IX') || clean.startsWith('9') || clean.includes('IX');
+  };
+
+  const handleSaveStudentPhoto = (newAvatarUrl: string) => {
+    const studentId = matchedLoggedInStudent?.id || currentUser.id;
+    if (onUpdateStudentPhoto && studentId) {
+      onUpdateStudentPhoto(studentId, newAvatarUrl);
+    }
+    setToastMessage('Foto profil Anda berhasil diperbarui!');
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
   };
 
   const handleInlineLogin = (e: React.FormEvent) => {
@@ -163,19 +186,22 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
               <Send className="w-4 h-4" />
               <span>Kirim Karya Mading</span>
             </button>
-          ) : (
-            onOpenStudentLoginModal && (
-              <button
-                onClick={onOpenStudentLoginModal}
-                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2 border border-emerald-400 cursor-pointer"
-              >
-                <KeyRound className="w-4 h-4" />
-                <span>Buka Pop-up Login</span>
-              </button>
-            )
-          )}
+          ) : null}
         </div>
       </div>
+
+      {/* Toast Notification for Profile Photo Update */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-2xl shadow-2xl border-2 border-white flex items-center gap-3 animate-in slide-in-from-top-4 duration-300">
+          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+            <Check className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h5 className="font-black text-xs">Foto Siswa Berhasil Diperbarui</h5>
+            <p className="text-[11px] text-emerald-100">{toastMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* KONDISI 1: JIKA SISWA SUDAH LOGIN */}
@@ -186,12 +212,22 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
           {/* Status Bar / User Welcome Banner */}
           <div className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-white overflow-hidden">
-                {currentUser.avatar ? (
-                  <img src={currentUser.avatar} alt="Foto Siswa" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-8 h-8" />
-                )}
+              <div className="relative group">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-white overflow-hidden">
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt="Foto Siswa" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8" />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditPhotoModalOpen(true)}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-indigo-900 hover:bg-indigo-800 text-white rounded-full flex items-center justify-center border-2 border-white shadow cursor-pointer transition-transform hover:scale-110"
+                  title="Ganti Foto Profil"
+                >
+                  <Camera className="w-3 h-3 text-amber-300" />
+                </button>
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-200/70 px-2.5 py-0.5 rounded-full border border-emerald-300">
@@ -208,15 +244,24 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
+                type="button"
+                onClick={() => setIsEditPhotoModalOpen(true)}
+                className="flex-1 sm:flex-initial px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer border border-indigo-700"
+                title="Ganti Pas Foto Siswa"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>Ganti Foto Saya</span>
+              </button>
+
+              <button
                 onClick={() => {
                   if (onLogout) onLogout();
-                  else if (onOpenStudentLoginModal) onOpenStudentLoginModal();
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="flex-1 sm:flex-initial px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
                 title="Keluar dari akun siswa ini"
               >
                 <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                <span>Ganti / Logout Siswa</span>
+                <span>Logout Siswa</span>
               </button>
             </div>
           </div>
@@ -256,12 +301,26 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
               {/* Card Body */}
               <div className="py-4 space-y-3 relative z-10">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-20 h-24 rounded-xl bg-indigo-800/80 border-2 border-amber-400 overflow-hidden shadow flex-shrink-0 flex items-center justify-center">
-                    {currentUser.avatar ? (
-                      <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-10 h-10 text-indigo-300" />
-                    )}
+                  {/* Foto Siswa dengan Interaktif Edit */}
+                  <div className="relative group">
+                    <div className="w-20 h-24 rounded-xl bg-indigo-800/80 border-2 border-amber-400 overflow-hidden shadow flex-shrink-0 flex items-center justify-center">
+                      {currentUser.avatar ? (
+                        <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-indigo-300" />
+                      )}
+                    </div>
+                    
+                    {/* Hover Button on Avatar */}
+                    <button
+                      type="button"
+                      onClick={() => setIsEditPhotoModalOpen(true)}
+                      className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 rounded-xl flex flex-col items-center justify-center text-amber-300 text-[10px] font-black transition-opacity cursor-pointer p-1 text-center"
+                      title="Klik untuk mengganti foto"
+                    >
+                      <Camera className="w-5 h-5 mb-0.5 text-amber-400" />
+                      <span>Ganti Foto</span>
+                    </button>
                   </div>
 
                   <div className="space-y-1">
@@ -290,6 +349,16 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
                     <span className="font-mono text-white">{settings.npsn}</span>
                   </div>
                 </div>
+
+                {/* Quick Edit Photo Link on Card */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditPhotoModalOpen(true)}
+                  className="w-full py-1.5 px-3 bg-amber-400 hover:bg-amber-300 text-indigo-950 text-[11px] font-black rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Kelola & Ganti Pas Foto</span>
+                </button>
               </div>
 
               {/* Card Footer */}
@@ -312,9 +381,19 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
                     <IdCard className="w-5 h-5 text-indigo-600" />
                     <span>Data Pokok Peserta Didik (Dapodik)</span>
                   </h3>
-                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                    Status: Siswa Aktif
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditPhotoModalOpen(true)}
+                      className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-950 rounded-lg text-xs font-black border border-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Ganti Pas Foto</span>
+                    </button>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      Status: Siswa Aktif
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -524,160 +603,32 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
         /* KONDISI 2: JIKA BELUM LOGIN SEBAGAI SISWA (TAMPILKAN FORM LOGIN & SELECTOR) */
         /* ========================================================================= */
         <div className="space-y-6 animate-in fade-in duration-300">
-          
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
-            {/* Left: Formulir Login Siswa Langsung */}
-            <div className="md:col-span-6 bg-white rounded-3xl p-6 sm:p-8 border-2 border-indigo-900 shadow-xl space-y-5">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="w-11 h-11 rounded-2xl bg-indigo-950 text-amber-400 flex items-center justify-center shadow font-black">
-                  <KeyRound className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded">
-                    FORMULIR AUTENTIKASI SISWA
-                  </span>
-                  <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                    Masuk ke Profil Siswa
-                  </h3>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Silakan masukkan <strong>NISN atau NIS</strong> dan <strong>Kata Sandi</strong> yang telah diberikan oleh sekolah.
+                   <div className="max-w-2xl mx-auto bg-white rounded-3xl p-8 sm:p-12 border-2 border-indigo-900 shadow-xl text-center space-y-6">
+            <div className="w-16 h-16 mx-auto bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4 border-2 border-indigo-100 shadow-inner">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
+                Akses Profil Siswa
+              </h3>
+              <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                Silakan masuk menggunakan tombol <strong>Login</strong> di pojok kanan atas layar menggunakan NISN dan Kata Sandi Anda untuk melihat profil dan mencetak kartu pelajar.
               </p>
-
-              {loginError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-                  <span>{loginError}</span>
-                </div>
-              )}
-
-              {loginSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-                  <span>{loginSuccess}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleInlineLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
-                    Nomor NISN atau NIS Siswa <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 0081234567 atau 23240901"
-                    value={nisnInput}
-                    onChange={(e) => setNisnInput(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none transition-all font-mono"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Gunakan NISN resmi 10 digit yang tercantum di kartu pelajar atau rapor.
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
-                    Kata Sandi <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="Masukkan kata sandi akun"
-                      value={passwordInput}
-                      onChange={(e) => setPasswordInput(e.target.value)}
-                      className="w-full px-4 py-2.5 pr-10 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Kata sandi awal diberikan oleh Wali Kelas / Operator Sekolah.
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-indigo-950 hover:bg-indigo-900 text-amber-300 hover:text-amber-200 font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 border border-indigo-800 cursor-pointer"
-                >
-                  <KeyRound className="w-4 h-4 text-amber-400" />
-                  <span>Masuk & Buka Profil Siswa</span>
-                </button>
-              </form>
             </div>
-
-            {/* Right: Panduan Resmi & Informasi Layanan Peserta Didik */}
-            <div className="md:col-span-6 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase text-indigo-900 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200">
-                      INFORMASI & LAYANAN SISWA
-                    </span>
-                    <h3 className="text-base font-black text-slate-900 mt-1">
-                      Panduan Akses Portal Resmi
-                    </h3>
-                  </div>
-                  <ShieldCheck className="w-6 h-6 text-emerald-600" />
-                </div>
-
-                <div className="space-y-3 text-xs text-slate-600">
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3">
-                    <IdCard className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-xs">Kartu Pelajar & Data Pribadi</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Lihat biodata terverifikasi, nomor induk kependudukan (NISN/NIS), dan cetak kartu pelajar digital.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3">
-                    <GraduationCap className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-xs">Pengumuman Kelulusan & SKL (Kelas IX)</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Khusus peserta didik kelas IX, portal ini memuat nilai kelulusan dan Surat Keterangan Lulus (SKL) resmi dengan QR Code.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3">
-                    <Send className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-xs">Publikasi Karya Mading Siswa</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Kirim karya puisi, cerpen, artikel edukasi, atau karya seni untuk dipublikasikan di mading digital sekolah.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-indigo-50/70 border border-indigo-200 rounded-2xl text-[11px] text-indigo-950 space-y-1">
-                <span className="font-black flex items-center gap-1.5 text-indigo-950">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  Bantuan Akun Siswa:
-                </span>
-                <p className="text-slate-600">
-                  Jika Anda lupa kata sandi atau mengalami kendala saat login, silakan hubungi Wali Kelas atau Tim IT Sekolah.
-                </p>
-              </div>
-            </div>
-
           </div>
-
         </div>
       )}
+
+      {/* Modal Edit Pas Foto Siswa */}
+      <EditStudentPhotoModal
+        isOpen={isEditPhotoModalOpen}
+        onClose={() => setIsEditPhotoModalOpen(false)}
+        currentAvatar={matchedLoggedInStudent?.avatar || currentUser.avatar || ''}
+        studentName={currentUser.name}
+        studentClass={matchedLoggedInStudent?.class_name || currentUser.class_name || 'IX'}
+        studentNisn={matchedLoggedInStudent?.nisn || currentUser.nisn || currentUser.identifier}
+        onSavePhoto={handleSaveStudentPhoto}
+      />
 
     </div>
   );

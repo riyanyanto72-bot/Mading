@@ -1,14 +1,15 @@
 import React from 'react';
-import { SchoolSettings } from '../types';
+import { SchoolSettings, UserAccount } from '../types';
 import { GraduationCap, MapPin, Phone, Mail, Globe, Heart, Building2, UserCircle } from 'lucide-react';
 import { NavigationTab } from './Header';
 
 interface FooterProps {
   settings: SchoolSettings;
   onSelectTab: (tab: NavigationTab) => void;
+  currentUser?: UserAccount;
 }
 
-export const Footer: React.FC<FooterProps> = ({ settings, onSelectTab }) => {
+export const Footer: React.FC<FooterProps> = ({ settings, onSelectTab, currentUser }) => {
   return (
     <footer className="bg-indigo-950 text-indigo-200 text-xs border-t-4 border-amber-400 pt-8 pb-6 shadow-inner">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -56,11 +57,13 @@ export const Footer: React.FC<FooterProps> = ({ settings, onSelectTab }) => {
                   Profil & Visi Misi Sekolah
                 </button>
               </li>
-              <li>
-                <button onClick={() => onSelectTab('admin')} className="hover:text-amber-300 transition-colors font-medium">
-                  Panel Administrator & Guru
-                </button>
-              </li>
+              {currentUser?.role === 'admin' && (
+                <li>
+                  <button onClick={() => onSelectTab('admin')} className="hover:text-amber-300 transition-colors font-medium">
+                    Panel Administrator
+                  </button>
+                </li>
+              )}
               <li>
                 <button onClick={() => onSelectTab('student-portal')} className="hover:text-amber-300 transition-colors font-medium">
                   Profil Siswa & Kartu Pelajar

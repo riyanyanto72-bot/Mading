@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MadingCategory, MadingPost, SchoolSettings } from '../../types';
+import { MadingCategory, MadingPost, SchoolSettings, UserAccount } from '../../types';
 import { MadingCard } from './MadingCard';
 import { Sparkles, Pin, Newspaper, PlusCircle, Filter } from 'lucide-react';
 
@@ -7,20 +7,26 @@ interface MadingGridProps {
   posts: MadingPost[];
   searchQuery: string;
   settings?: SchoolSettings;
+  currentUser: UserAccount;
   onSelectPost: (post: MadingPost) => void;
   onLikePost: (postId: string, e: React.MouseEvent) => void;
   onOpenSubmitModal: () => void;
   onGoToGraduation: () => void;
+  onApprovePost: (postId: string) => void;
+  onRejectPost: (postId: string) => void;
 }
 
 export const MadingGrid: React.FC<MadingGridProps> = ({
   posts,
   searchQuery,
   settings,
+  currentUser,
   onSelectPost,
   onLikePost,
   onOpenSubmitModal,
   onGoToGraduation,
+  onApprovePost,
+  onRejectPost,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
@@ -38,6 +44,14 @@ export const MadingGrid: React.FC<MadingGridProps> = ({
 
   // Filter posts
   const filteredPosts = posts.filter((post) => {
+    // Determine visibility based on status and role
+    const isApproved = post.status !== 'pending' && post.status !== 'rejected';
+    const isPending = post.status === 'pending';
+    const canSeePending = currentUser.role === 'admin' || currentUser.role === 'guru';
+    const isMyPending = isPending && currentUser.name === post.author && currentUser.role === 'siswa';
+
+    if (!isApproved && !canSeePending && !isMyPending) return false;
+
     const matchesCategory = selectedCategory === 'Semua' || post.category === selectedCategory;
     const matchesSearch =
       !searchQuery ||
@@ -45,11 +59,12 @@ export const MadingGrid: React.FC<MadingGridProps> = ({
       post.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.tags?.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    
     return matchesCategory && matchesSearch;
   });
 
   // Find pinned post
-  const pinnedPost = posts.find((p) => p.pinned);
+  const pinnedPost = posts.find((p) => p.pinned && p.status !== 'pending' && p.status !== 'rejected');
 
   return (
     <div className="space-y-6 pb-12">

@@ -29,58 +29,69 @@ const STAFF_COLLECTION = 'staff_accounts';
  */
 export async function initializeFirestoreDataIfEmpty(): Promise<void> {
   try {
-    // 1. Check settings
-    const settingsDocRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
-    const settingsSnap = await getDoc(settingsDocRef);
+    // Check with timeout guard to prevent offline block
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore init check timeout')), 4000)
+    );
 
-    if (!settingsSnap.exists()) {
-      console.log('Seeding initial school settings to Firestore...');
-      await setDoc(settingsDocRef, initialSchoolSettings);
-    }
+    await Promise.race([
+      (async () => {
+        // 1. Check settings
+        const settingsDocRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
+        const settingsSnap = await getDoc(settingsDocRef);
 
-    // 2. Check mading posts
-    const madingCollRef = collection(db, MADING_COLLECTION);
-    const madingSnap = await getDocs(madingCollRef);
+        if (!settingsSnap.exists()) {
+          console.log('Seeding initial school settings to Firestore...');
+          await setDoc(settingsDocRef, initialSchoolSettings);
+        }
 
-    if (madingSnap.empty) {
-      console.log('Seeding initial mading posts to Firestore...');
-      const batch = writeBatch(db);
-      initialMadingPosts.forEach((post) => {
-        const postRef = doc(db, MADING_COLLECTION, post.id);
-        batch.set(postRef, post);
-      });
-      await batch.commit();
-    }
+        // 2. Check mading posts
+        const madingCollRef = collection(db, MADING_COLLECTION);
+        const madingSnap = await getDocs(madingCollRef);
 
-    // 3. Check students
-    const studentsCollRef = collection(db, STUDENTS_COLLECTION);
-    const studentsSnap = await getDocs(studentsCollRef);
+        if (madingSnap.empty) {
+          console.log('Seeding initial mading posts to Firestore...');
+          const batch = writeBatch(db);
+          initialMadingPosts.forEach((post) => {
+            const postRef = doc(db, MADING_COLLECTION, post.id);
+            batch.set(postRef, post);
+          });
+          await batch.commit();
+        }
 
-    if (studentsSnap.empty) {
-      console.log('Seeding initial graduation students to Firestore...');
-      const batch = writeBatch(db);
-      initialGraduationStudents.forEach((student) => {
-        const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
-        batch.set(studentRef, student);
-      });
-      await batch.commit();
-    }
+        // 3. Check students
+        const studentsCollRef = collection(db, STUDENTS_COLLECTION);
+        const studentsSnap = await getDocs(studentsCollRef);
 
-    // 4. Check staff (Guru & Admin)
-    const staffCollRef = collection(db, STAFF_COLLECTION);
-    const staffSnap = await getDocs(staffCollRef);
+        if (studentsSnap.empty) {
+          console.log('Seeding initial graduation students to Firestore...');
+          const batch = writeBatch(db);
+          initialGraduationStudents.forEach((student) => {
+            const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
+            batch.set(studentRef, student);
+          });
+          await batch.commit();
+        }
 
-    if (staffSnap.empty) {
-      console.log('Seeding initial staff accounts to Firestore...');
-      const batch = writeBatch(db);
-      initialStaffAccounts.forEach((staff) => {
-        const staffRef = doc(db, STAFF_COLLECTION, staff.id);
-        batch.set(staffRef, staff);
-      });
-      await batch.commit();
-    }
+        // 4. Check staff (Guru & Admin)
+        const staffCollRef = collection(db, STAFF_COLLECTION);
+        const staffSnap = await getDocs(staffCollRef);
+
+        if (staffSnap.empty) {
+          console.log('Seeding initial staff accounts to Firestore...');
+          const batch = writeBatch(db);
+          initialStaffAccounts.forEach((staff) => {
+            const staffRef = doc(db, STAFF_COLLECTION, staff.id);
+            batch.set(staffRef, staff);
+          });
+          await batch.commit();
+        }
+      })(),
+      timeoutPromise,
+    ]);
   } catch (error) {
-    console.error('Error in initializeFirestoreDataIfEmpty:', error);
+    // Gracefully handle offline or slow connection — app continues using local fast-cache smoothly
+    console.info('Firestore initial sync in offline/cached mode:', (error as Error)?.message || error);
   }
 }
 
@@ -104,7 +115,12 @@ export function subscribeSchoolSettings(
       }
     },
     (error) => {
-      console.error('Settings snapshot error:', error);
+      // Quietly log snapshot status (e.g. temporary offline mode)
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        console.info('Firestore settings snapshot operating in offline/cached mode');
+      } else {
+        console.warn('Settings snapshot notice:', error.message);
+      }
       if (onError) onError(error);
     }
   );
@@ -146,7 +162,11 @@ export function subscribeMadingPosts(
       onUpdate(loadedPosts);
     },
     (error) => {
-      console.error('Mading posts snapshot error:', error);
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        console.info('Firestore mading snapshot operating in offline/cached mode');
+      } else {
+        console.warn('Mading posts snapshot notice:', error.message);
+      }
       if (onError) onError(error);
     }
   );
@@ -219,7 +239,11 @@ export function subscribeStudents(
       onUpdate(loadedStudents);
     },
     (error) => {
-      console.error('Students snapshot error:', error);
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        console.info('Firestore students snapshot operating in offline/cached mode');
+      } else {
+        console.warn('Students snapshot notice:', error.message);
+      }
       if (onError) onError(error);
     }
   );
@@ -283,7 +307,11 @@ export function subscribeStaffAccounts(
       onUpdate(loadedStaff);
     },
     (error) => {
-      console.error('Staff snapshot error:', error);
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        console.info('Firestore staff snapshot operating in offline/cached mode');
+      } else {
+        console.warn('Staff snapshot notice:', error.message);
+      }
       if (onError) onError(error);
     }
   );
