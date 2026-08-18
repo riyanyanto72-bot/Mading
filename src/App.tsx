@@ -48,13 +48,6 @@ export default function App() {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<NavigationTab>('mading');
 
-  // Sync document title
-  useEffect(() => {
-    if (settings?.schoolName) {
-      document.title = `${settings.schoolName} - Portal Mading & Kelulusan`;
-    }
-  }, [settings?.schoolName]);
-
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -63,6 +56,13 @@ export default function App() {
     const saved = localStorage.getItem('school_settings_v1');
     return saved ? JSON.parse(saved) : initialSchoolSettings;
   });
+
+  // Sync document title
+  useEffect(() => {
+    if (settings?.schoolName) {
+      document.title = `${settings.schoolName} - Portal Mading & Kelulusan`;
+    }
+  }, [settings?.schoolName]);
 
   const [posts, setPosts] = useState<MadingPost[]>(() => {
     const saved = localStorage.getItem('school_mading_posts_v1');
