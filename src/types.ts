@@ -62,6 +62,7 @@ export interface MadingPost {
   comments: Comment[];
   pinned?: boolean;
   status: 'published' | 'pending';
+  expiryDate?: string;
 }
 
 export type GraduationStatus = 'LULUS' | 'TIDAK_LULUS' | 'DITANGGUHKAN' | 'BELUM_DIBUKA';

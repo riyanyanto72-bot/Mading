@@ -66,7 +66,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, onSelectTab, currentUs
               )}
               <li>
                 <button onClick={() => onSelectTab('student-portal')} className="hover:text-amber-300 transition-colors font-medium">
-                  Profil Siswa & Kartu Pelajar
+                  {currentUser?.role === 'guru' ? 'Profil Guru & Pendidik' : 'Profil Siswa & Kartu Pelajar'}
                 </button>
               </li>
             </ul>

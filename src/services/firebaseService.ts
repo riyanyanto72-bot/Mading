@@ -27,6 +27,25 @@ const STUDENTS_COLLECTION = 'students';
 const STAFF_COLLECTION = 'staff_accounts';
 
 /**
+ * Recursively removes undefined values from objects to prevent Firestore setDoc/updateDoc errors
+ */
+function cleanForFirestore<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(cleanForFirestore) as unknown as T;
+  }
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = cleanForFirestore(value);
+    }
+  }
+  return cleaned as T;
+}
+
+/**
  * Automatically seeds default data to Firestore ONLY on first-time setup.
  * Once initialized, it will NEVER re-seed deleted mading posts, students, or accounts on refresh.
  */
@@ -129,7 +148,7 @@ export function subscribeSchoolSettings(
  */
 export async function saveSchoolSettingsToFirestore(settings: SchoolSettings): Promise<void> {
   const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
-  await setDoc(docRef, settings, { merge: true });
+  await setDoc(docRef, cleanForFirestore(settings), { merge: true });
 }
 
 /**
@@ -175,7 +194,7 @@ export function subscribeMadingPosts(
  */
 export async function saveMadingPostToFirestore(post: MadingPost): Promise<void> {
   const postRef = doc(db, MADING_COLLECTION, post.id);
-  await setDoc(postRef, post, { merge: true });
+  await setDoc(postRef, cleanForFirestore(post), { merge: true });
 }
 
 /**
@@ -252,7 +271,7 @@ export function subscribeStudents(
  */
 export async function saveStudentToFirestore(student: StudentGraduation): Promise<void> {
   const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
-  await setDoc(studentRef, student, { merge: true });
+  await setDoc(studentRef, cleanForFirestore(student), { merge: true });
 }
 
 /**
@@ -272,7 +291,7 @@ export async function batchImportStudentsToFirestore(
   const batch = writeBatch(db);
   studentsList.forEach((student) => {
     const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
-    batch.set(studentRef, student, { merge: true });
+    batch.set(studentRef, cleanForFirestore(student), { merge: true });
   });
   await batch.commit();
 }
@@ -320,7 +339,7 @@ export function subscribeStaffAccounts(
  */
 export async function saveStaffAccountToFirestore(staff: StaffAccount): Promise<void> {
   const staffRef = doc(db, STAFF_COLLECTION, staff.id);
-  await setDoc(staffRef, staff, { merge: true });
+  await setDoc(staffRef, cleanForFirestore(staff), { merge: true });
 }
 
 /**

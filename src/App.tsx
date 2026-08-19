@@ -10,6 +10,7 @@ import { GraduationPortal } from './components/Graduation/GraduationPortal';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { SchoolProfileView } from './components/Profile/SchoolProfileView';
 import { StudentProfileView } from './components/StudentPortal/StudentProfileView';
+import { TeacherProfileView } from './components/TeacherPortal/TeacherProfileView';
 import { RoleSwitcherModal } from './components/Auth/RoleSwitcherModal';
 import { Footer } from './components/Footer';
 import { ShieldAlert } from 'lucide-react';
@@ -226,6 +227,60 @@ export default function App() {
       setCurrentUser(updatedUser);
       localStorage.setItem('school_current_user_v1', JSON.stringify(updatedUser));
     }
+  };
+
+  // Handle Update Teacher Photo (Directly by teacher, synced to Firestore & Local state)
+  const handleUpdateTeacherPhoto = (newAvatar: string) => {
+    const updatedUser: UserAccount = {
+      ...currentUser,
+      avatar: newAvatar,
+    };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('school_current_user_v1', JSON.stringify(updatedUser));
+
+    // Update in staff accounts array
+    const updatedStaffList = staffAccounts.map((st) =>
+      st.id === currentUser.id || st.username === currentUser.username
+        ? { ...st, avatar: newAvatar }
+        : st
+    );
+    setStaffAccounts(updatedStaffList);
+    localStorage.setItem('school_staff_accounts_v1', JSON.stringify(updatedStaffList));
+
+    const matchedStaff = updatedStaffList.find(
+      (st) => st.id === currentUser.id || st.username === currentUser.username
+    );
+    if (matchedStaff) {
+      saveStaffAccountToFirestore(matchedStaff).catch((err) => {
+        console.error('Failed to save updated teacher photo to Firestore:', err);
+      });
+    }
+  };
+
+  // Handle Update Teacher Profile (Biodata, NIP, Mapel, etc.)
+  const handleUpdateTeacherProfile = (updatedStaff: StaffAccount) => {
+    const updatedStaffList = staffAccounts.some((s) => s.id === updatedStaff.id)
+      ? staffAccounts.map((s) => (s.id === updatedStaff.id ? updatedStaff : s))
+      : [...staffAccounts, updatedStaff];
+
+    setStaffAccounts(updatedStaffList);
+    localStorage.setItem('school_staff_accounts_v1', JSON.stringify(updatedStaffList));
+    saveStaffAccountToFirestore(updatedStaff).catch((err) => {
+      console.error('Failed to save updated staff account to Firestore:', err);
+    });
+
+    const updatedUser: UserAccount = {
+      ...currentUser,
+      name: updatedStaff.name,
+      roleLabel: updatedStaff.subject || updatedStaff.roleLabel || 'Dewan Guru',
+      identifier: updatedStaff.nip ? `NIP. ${updatedStaff.nip}` : (updatedStaff.identifier || updatedStaff.username),
+      nip: updatedStaff.nip,
+      email: updatedStaff.email,
+      password: updatedStaff.password,
+      avatar: updatedStaff.avatar || '',
+    };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('school_current_user_v1', JSON.stringify(updatedUser));
   };
 
   // Handle Like Mading Post (Local + Cloud Firestore)
@@ -447,18 +502,36 @@ export default function App() {
         )}
 
         {activeTab === 'student-portal' && (
-          <StudentProfileView
-            settings={settings}
-            currentUser={currentUser}
-            posts={posts}
-            students={students}
-            onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-            onSelectPost={(post) => setSelectedPost(post)}
-            onGoToGraduation={() => setActiveTab('graduation')}
-            onLoginSuccess={(acc) => setCurrentUser(acc)}
-            onLogout={handleLogout}
-            onUpdateStudentPhoto={handleUpdateStudentPhoto}
-          />
+          (currentUser.role === 'guru' || currentUser.role === 'admin') ? (
+            <TeacherProfileView
+              settings={settings}
+              currentUser={currentUser}
+              posts={posts}
+              staffAccounts={staffAccounts}
+              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+              onSelectPost={(post) => setSelectedPost(post)}
+              onGoToModeration={() => {
+                setAdminInitialTab('mading');
+                setActiveTab('admin');
+              }}
+              onLogout={handleLogout}
+              onUpdateTeacherProfile={handleUpdateTeacherProfile}
+              onUpdateTeacherPhoto={handleUpdateTeacherPhoto}
+            />
+          ) : (
+            <StudentProfileView
+              settings={settings}
+              currentUser={currentUser}
+              posts={posts}
+              students={students}
+              onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+              onSelectPost={(post) => setSelectedPost(post)}
+              onGoToGraduation={() => setActiveTab('graduation')}
+              onLoginSuccess={(acc) => setCurrentUser(acc)}
+              onLogout={handleLogout}
+              onUpdateStudentPhoto={handleUpdateStudentPhoto}
+            />
+          )
         )}
 
         {activeTab === 'admin' && (

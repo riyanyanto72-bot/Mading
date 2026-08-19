@@ -12,7 +12,7 @@ export const initialStaffAccounts: StaffAccount[] = [
     email: 'riyanyanto72@admin.smp.belajar.id',
     nip: '19850315 201001 1 012',
     subject: 'Kepala Lab Komputer & Operator Sistem',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
   {
     id: 'acc-guru-1',
@@ -25,7 +25,7 @@ export const initialStaffAccounts: StaffAccount[] = [
     email: 'siti.aminah@sekolah.sch.id',
     nip: '19780512 200604 2 008',
     subject: 'Bahasa Indonesia & Pembina Mading',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
   {
     id: 'acc-guru-2',
@@ -38,7 +38,7 @@ export const initialStaffAccounts: StaffAccount[] = [
     email: 'hendro.wibowo@sekolah.sch.id',
     nip: '19720815 199903 1 004',
     subject: 'Matematika & Wali Kelas IX-A',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
   {
     id: 'acc-guru-3',
@@ -51,7 +51,7 @@ export const initialStaffAccounts: StaffAccount[] = [
     email: 'nurul.hidayah@sekolah.sch.id',
     nip: '19881120 201402 2 003',
     subject: 'Ilmu Pengetahuan Alam (IPA)',
-    avatar: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
 ];
 
@@ -65,7 +65,7 @@ export const presetAccounts: UserAccount[] = [
     username: 'admin',
     password: 'admin123',
     email: 'riyanyanto72@admin.smp.belajar.id',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
   {
     id: 'acc-guru-1',
@@ -75,7 +75,7 @@ export const presetAccounts: UserAccount[] = [
     identifier: 'NIP. 19780512 200604 2 008',
     username: 'sitiaminah',
     password: 'guru123',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
   },
   {
     id: 'acc-siswa-9',

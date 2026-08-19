@@ -43,6 +43,7 @@ import {
   Target,
   Award,
   BookOpen,
+  Megaphone,
   MapPin,
   Phone,
   Mail,
@@ -106,7 +107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   initialTab,
 }) => {
   const isGuru = currentUser.role === 'guru';
-  const [activeTab, setActiveTab] = useState<'kelulusan' | 'accounts' | 'pengaturan' | 'mading' | 'profil_sekolah'>(
+  const [activeTab, setActiveTab] = useState<'kelulusan' | 'accounts' | 'pengaturan' | 'mading' | 'profil_sekolah' | 'pengumuman'>(
     isGuru ? 'mading' : (initialTab || 'accounts')
   );
 
@@ -167,6 +168,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newPostExcerpt, setNewPostExcerpt] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostCoverImage, setNewPostCoverImage] = useState('');
+  const [announcementExpiryDate, setAnnouncementExpiryDate] = useState('');
+  const announcementFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const getCountdownText = (expiryDateStr?: string) => {
+    if (!expiryDateStr) return 'Berlaku Selamanya';
+    const now = new Date().getTime();
+    const expiry = new Date(expiryDateStr).getTime();
+    const diff = expiry - now;
+    if (diff <= 0) return 'Pengumuman Berakhir';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `Sisa Waktu: ${days} hari ${hours} jam`;
+    if (hours > 0) return `Sisa Waktu: ${hours} jam ${minutes} menit`;
+    return `Sisa Waktu: ${minutes} menit lagi`;
+  };
+
+  const handleAnnouncementFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setNewPostCoverImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Settings form states
   const [schoolName, setSchoolName] = useState(settings.school_name || '');
@@ -510,7 +539,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       nip: '-',
       position: role === 'admin' ? 'Operator & Admin Mading' : 'Guru Mata Pelajaran',
       email: '',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+      avatar: '',
     });
   };
 
@@ -606,6 +635,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       content: newPostContent.trim(),
       excerpt: newPostExcerpt.trim() || newPostContent.trim().slice(0, 140) + '...',
       coverImage: newPostCoverImage.trim() || undefined,
+      expiryDate: announcementExpiryDate ? new Date(announcementExpiryDate).toISOString() : undefined,
       tags: ['Mading', newPostCategory],
       likes: 0,
       comments: [],
@@ -621,6 +651,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewPostExcerpt('');
     setNewPostContent('');
     setNewPostCoverImage('');
+    setAnnouncementExpiryDate('');
     setIsNewPostModalOpen(false);
   };
 
@@ -792,6 +823,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <Settings className="w-4 h-4 text-slate-600" />
               <span>Pengaturan & Motivasi</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('pengumuman');
+                setEditingStudent(null);
+                setEditingStaff(null);
+              }}
+              className={`py-3 px-5 text-xs font-extrabold uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'pengumuman'
+                  ? 'bg-white border-t-2 border-l border-r border-slate-200 text-indigo-950 shadow-xs font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Megaphone className="w-4 h-4 text-amber-600" />
+              <span>Pengumuman Resmi</span>
+              <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black">
+                {posts.filter((p) => p.category === 'Pengumuman').length}
+              </span>
             </button>
           </>
         )}
@@ -1046,11 +1096,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {/* Name & Avatar */}
                           <td className="p-3.5">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={st.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'}
-                                alt={st.full_name}
-                                className="w-9 h-9 rounded-xl object-cover border border-purple-200 flex-shrink-0"
-                              />
+                              {st.avatar ? (
+                                <img
+                                  src={st.avatar}
+                                  alt={st.full_name}
+                                  className="w-9 h-9 rounded-xl object-cover border border-purple-200 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center font-bold flex-shrink-0">
+                                  {isAdmin ? <Shield className="w-4 h-4 text-purple-700" /> : <GraduationCap className="w-4 h-4 text-purple-700" />}
+                                </div>
+                              )}
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-extrabold text-slate-900 block leading-snug">
@@ -2645,6 +2701,193 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* ========================================================================= */}
+      {/* TAB: PENGUMUMAN RESMI (HANYA ADMIN) */}
+      {/* ========================================================================= */}
+      {activeTab === 'pengumuman' && !isGuru && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
+                  <Megaphone className="w-4 h-4" />
+                </span>
+                <h3 className="font-black text-xl text-slate-900">Pengumuman Resmi Sekolah</h3>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Pusat publikasi pengumuman eksklusif administrator. Pengumuman yang diterbitkan akan otomatis tersemat di beranda Mading Digital.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreateNewPost} className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
+            <h4 className="font-black text-sm text-indigo-950 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-amber-600" />
+              Buat Pengumuman Resmi Baru
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Judul Pengumuman <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  value={newPostTitle}
+                  onChange={(e) => setNewPostTitle(e.target.value)}
+                  placeholder="Contoh: Pengumuman Kelulusan & Jadwal Pelepasan Siswa Kelas IX"
+                  className="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Penulis / Redaksi Resmi
+                </label>
+                <input
+                  value={newPostAuthor}
+                  onChange={(e) => setNewPostAuthor(e.target.value)}
+                  placeholder="Contoh: Tim Manajemen & Administrator Sekolah"
+                  className="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Gambar Banner / Sampul (Pilih dari Galeri atau Tautan URL)
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3 items-center">
+                  <input
+                    ref={announcementFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAnnouncementFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => announcementFileInputRef.current?.click()}
+                    className="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <UploadCloud className="w-4 h-4 text-indigo-600" />
+                    <span>Pilih Foto dari Galeri HP / Komputer</span>
+                  </button>
+
+                  <input
+                    type="url"
+                    value={newPostCoverImage}
+                    onChange={(e) => setNewPostCoverImage(e.target.value)}
+                    placeholder="Atau masukkan URL gambar https://..."
+                    className="flex-1 w-full border border-slate-300 rounded-xl p-2.5 text-sm font-mono text-xs bg-white focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                {newPostCoverImage && (
+                  <div className="mt-3 relative w-full h-36 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
+                    <img src={newPostCoverImage} alt="Preview Banner" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setNewPostCoverImage('')}
+                      className="absolute top-2 right-2 px-2.5 py-1 bg-rose-600 text-white rounded-lg text-[10px] font-bold shadow-md cursor-pointer"
+                    >
+                      Hapus Gambar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Tanggal & Waktu Berakhir Pengumuman (Penghitung Mundur Otomatis)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={announcementExpiryDate}
+                  onChange={(e) => setAnnouncementExpiryDate(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Pengumuman akan otomatis menampilkan penghitung mundur (countdown) waktu berakhir di beranda Mading Digital.
+                </p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Isi Lengkap Pengumuman <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={5}
+                  value={newPostContent}
+                  onChange={(e) => {
+                    setNewPostContent(e.target.value);
+                    setNewPostExcerpt(e.target.value.slice(0, 140) + '...');
+                    setNewPostCategory('Pengumuman');
+                  }}
+                  placeholder="Tuliskan detail pengumuman resmi di sini..."
+                  className="w-full border border-slate-300 rounded-xl p-3 text-sm text-slate-900 bg-white focus:outline-none focus:border-indigo-600 font-sans leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-indigo-950 hover:bg-indigo-900 text-amber-300 font-black text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2 border border-amber-400"
+              >
+                <Megaphone className="w-4 h-4 text-amber-400" />
+                <span>Terbitkan Pengumuman Resmi</span>
+              </button>
+            </div>
+          </form>
+
+          {/* List of Official Announcements */}
+          <div className="space-y-3 pt-4 border-t border-slate-200">
+            <h4 className="font-black text-sm text-slate-900">
+              Daftar Pengumuman Resmi ({posts.filter(p => p.category === 'Pengumuman').length})
+            </h4>
+
+            <div className="space-y-2">
+              {posts.filter(p => p.category === 'Pengumuman').map(post => (
+                <div key={post.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold flex-shrink-0">
+                      <Megaphone className="w-5 h-5 text-amber-700" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h5 className="font-black text-sm text-slate-900">{post.title}</h5>
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded border border-amber-300">
+                          Resmi Pinned
+                        </span>
+                        {post.expiryDate && (
+                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-800 text-[10px] font-bold rounded border border-indigo-200 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-indigo-600" />
+                            <span>{getCountdownText(post.expiryDate)}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{post.excerpt}</p>
+                      <span className="text-[11px] text-slate-400 font-mono mt-1 block">Oleh: {post.author} • {post.date}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setPostToDelete(post)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-1 border border-rose-200 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* TAB 4: KELOLA MADING & MODERASI */}
       {/* ========================================================================= */}
       {activeTab === 'mading' && (
@@ -2675,13 +2918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               )}
 
-              <button
-                onClick={() => setIsNewPostModalOpen(true)}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tulis Postingan Baru</span>
-              </button>
+              {/* Tulis Postingan Baru removed from moderation */}
             </div>
           </div>
 

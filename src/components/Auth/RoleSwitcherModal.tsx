@@ -58,7 +58,7 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
         username: matchedStaff.username,
         password: matchedStaff.password,
         email: matchedStaff.email,
-        avatar: matchedStaff.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+        avatar: matchedStaff.avatar || '',
       };
       onSelectAccount(staffUserAccount);
       onClose();
@@ -95,7 +95,7 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
           class_name: matchedStudent.class_name,
           username: matchedStudent.nisn,
           password: matchedStudent.password || 'siswa',
-          avatar: matchedStudent.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          avatar: matchedStudent.avatar || '',
         };
         onSelectAccount(studentUserAccount);
         onClose();

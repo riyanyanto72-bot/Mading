@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Tab Profil Siswa (Diletakkan di Paling Kanan) */}
+            {/* Tab Profil Akun (Profil Guru untuk role Guru, Profil Siswa untuk role Siswa, Profil Admin untuk role Admin) */}
             <button
               onClick={() => setActiveTab('student-portal')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
@@ -230,10 +230,26 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'bg-amber-400 text-indigo-950 shadow-xs'
                   : 'text-indigo-100 hover:text-white hover:bg-indigo-800'
               }`}
-              title="Profil Pribadi Siswa & Kartu Pelajar (Login Siswa)"
+              title={
+                currentUser.role === 'guru'
+                  ? 'Profil Pendidik & Biodata Guru'
+                  : currentUser.role === 'admin'
+                  ? 'Profil Administrator Sekolah'
+                  : 'Profil Pribadi Siswa & Kartu Pelajar'
+              }
             >
-              <UserCircle className="w-3.5 h-3.5" />
-              <span>Profil Siswa</span>
+              {currentUser.role === 'guru' ? (
+                <GraduationCap className="w-3.5 h-3.5" />
+              ) : (
+                <UserCircle className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {currentUser.role === 'guru'
+                  ? 'Profil Guru'
+                  : currentUser.role === 'admin'
+                  ? 'Profil Admin'
+                  : 'Profil Siswa'}
+              </span>
             </button>
 
           </nav>
