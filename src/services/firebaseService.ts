@@ -20,77 +20,75 @@ import { initialStaffAccounts } from '../data/roleAccounts';
 
 const SETTINGS_COLLECTION = 'settings';
 const SETTINGS_DOC_ID = 'school_settings';
+const SYSTEM_METADATA_COLLECTION = 'system_metadata';
+const SYSTEM_INIT_DOC_ID = 'initialization';
 const MADING_COLLECTION = 'mading_posts';
 const STUDENTS_COLLECTION = 'students';
 const STAFF_COLLECTION = 'staff_accounts';
 
 /**
- * Automatically seeds default data to Firestore if the collections are empty.
+ * Automatically seeds default data to Firestore ONLY on first-time setup.
+ * Once initialized, it will NEVER re-seed deleted mading posts, students, or accounts on refresh.
  */
 export async function initializeFirestoreDataIfEmpty(): Promise<void> {
   try {
-    // Check with timeout guard to prevent offline block
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Firestore init check timeout')), 4000)
     );
 
     await Promise.race([
       (async () => {
-        // 1. Check settings
+        // 0. Check system initialization marker
+        const initDocRef = doc(db, SYSTEM_METADATA_COLLECTION, SYSTEM_INIT_DOC_ID);
+        const initSnap = await getDoc(initDocRef);
+
         const settingsDocRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
         const settingsSnap = await getDoc(settingsDocRef);
 
-        if (!settingsSnap.exists()) {
-          console.log('Seeding initial school settings to Firestore...');
-          await setDoc(settingsDocRef, initialSchoolSettings);
+        // If system is already initialized or settings document already exists, DO NOT re-seed!
+        if (initSnap.exists() || settingsSnap.exists()) {
+          if (!initSnap.exists()) {
+            await setDoc(initDocRef, { isInitialized: true, initializedAt: new Date().toISOString() });
+          }
+          return;
         }
 
-        // 2. Check mading posts
-        const madingCollRef = collection(db, MADING_COLLECTION);
-        const madingSnap = await getDocs(madingCollRef);
+        console.log('Performing first-time seeding to Cloud Firestore...');
 
-        if (madingSnap.empty) {
-          console.log('Seeding initial mading posts to Firestore...');
-          const batch = writeBatch(db);
-          initialMadingPosts.forEach((post) => {
-            const postRef = doc(db, MADING_COLLECTION, post.id);
-            batch.set(postRef, post);
-          });
-          await batch.commit();
-        }
+        // 1. Initial settings
+        await setDoc(settingsDocRef, initialSchoolSettings);
 
-        // 3. Check students
-        const studentsCollRef = collection(db, STUDENTS_COLLECTION);
-        const studentsSnap = await getDocs(studentsCollRef);
+        // 2. Initial mading posts
+        const madingBatch = writeBatch(db);
+        initialMadingPosts.forEach((post) => {
+          const postRef = doc(db, MADING_COLLECTION, post.id);
+          madingBatch.set(postRef, post);
+        });
+        await madingBatch.commit();
 
-        if (studentsSnap.empty) {
-          console.log('Seeding initial graduation students to Firestore...');
-          const batch = writeBatch(db);
-          initialGraduationStudents.forEach((student) => {
-            const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
-            batch.set(studentRef, student);
-          });
-          await batch.commit();
-        }
+        // 3. Initial graduation students
+        const studentsBatch = writeBatch(db);
+        initialGraduationStudents.forEach((student) => {
+          const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
+          studentsBatch.set(studentRef, student);
+        });
+        await studentsBatch.commit();
 
-        // 4. Check staff (Guru & Admin)
-        const staffCollRef = collection(db, STAFF_COLLECTION);
-        const staffSnap = await getDocs(staffCollRef);
+        // 4. Initial staff (Guru & Admin)
+        const staffBatch = writeBatch(db);
+        initialStaffAccounts.forEach((staff) => {
+          const staffRef = doc(db, STAFF_COLLECTION, staff.id);
+          staffBatch.set(staffRef, staff);
+        });
+        await staffBatch.commit();
 
-        if (staffSnap.empty) {
-          console.log('Seeding initial staff accounts to Firestore...');
-          const batch = writeBatch(db);
-          initialStaffAccounts.forEach((staff) => {
-            const staffRef = doc(db, STAFF_COLLECTION, staff.id);
-            batch.set(staffRef, staff);
-          });
-          await batch.commit();
-        }
+        // 5. Save initialization flag so future refreshes never re-insert deleted posts
+        await setDoc(initDocRef, { isInitialized: true, initializedAt: new Date().toISOString() });
+        console.log('First-time Cloud Firestore seeding completed successfully.');
       })(),
       timeoutPromise,
     ]);
   } catch (error) {
-    // Gracefully handle offline or slow connection — app continues using local fast-cache smoothly
     console.info('Firestore initial sync in offline/cached mode:', (error as Error)?.message || error);
   }
 }

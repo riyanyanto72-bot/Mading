@@ -3,26 +3,27 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // School settings & profile
     match /settings/{document} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if true;
+    }
+
+    // System initialization metadata
+    match /system_metadata/{document} {
+      allow read, write: if true;
     }
 
     // Digital Mading posts & interactions
     match /mading_posts/{postId} {
-      allow read: if true;
-      allow create, update, delete: if true;
+      allow read, write: if true;
     }
 
     // Students database & graduation records
     match /students/{studentId} {
-      allow read: if true;
-      allow create, update, delete: if true;
+      allow read, write: if true;
     }
 
     // Staff accounts (Guru & Admin credentials)
     match /staff_accounts/{staffId} {
-      allow read: if true;
-      allow create, update, delete: if true;
+      allow read, write: if true;
     }
 
     // Fallback rule for applet documents
@@ -31,3 +32,4 @@ service cloud.firestore {
     }
   }
 }
+

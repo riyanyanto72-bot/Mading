@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SchoolSettings, MadingPost, StudentGraduation, UserAccount, GraduationStatus, GradeLevel, StaffAccount } from '../../types';
 import { initialStaffAccounts } from '../../data/roleAccounts';
+import { deleteMadingPostFromFirestore } from '../../services/firebaseService';
 import { 
   GraduationCap, 
   Newspaper, 
@@ -549,6 +550,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const confirmDeletePost = () => {
     if (!postToDelete) return;
+    deleteMadingPostFromFirestore(postToDelete.id).catch((err) => {
+      console.error('Error deleting mading post from Firestore:', err);
+    });
     onUpdatePosts(posts.filter((p) => p.id !== postToDelete.id));
     showToast(`Postingan mading "${postToDelete.title}" berhasil dihapus.`, 'info');
     setPostToDelete(null);
@@ -577,6 +581,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleRejectPost = (postId: string) => {
     const target = posts.find((p) => p.id === postId);
     if (!target) return;
+    deleteMadingPostFromFirestore(postId).catch((err) => {
+      console.error('Error deleting rejected mading post from Firestore:', err);
+    });
     onUpdatePosts(posts.filter((p) => p.id !== postId));
     showToast(`Karya "${target.title}" telah ditolak dan dihapus.`, 'info');
   };
