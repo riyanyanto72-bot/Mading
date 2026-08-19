@@ -20,6 +20,7 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
   const [commentAuthor, setCommentAuthor] = useState('');
   const [commentText, setCommentText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!post) return null;
 
@@ -79,8 +80,20 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
           {/* Cover Image */}
           {post.coverImage && (
-            <div className="rounded-xl overflow-hidden shadow-md max-h-80 w-full bg-slate-100">
-              <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
+            <div 
+              onClick={() => setIsPreviewOpen(true)}
+              className="relative rounded-xl overflow-hidden shadow-md max-h-96 w-full bg-slate-900 cursor-pointer group border border-slate-200 flex items-center justify-center"
+            >
+              <img 
+                src={post.coverImage} 
+                alt={post.title} 
+                className="w-full max-h-96 object-contain mx-auto transition-transform duration-300 group-hover:scale-102" 
+              />
+              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="bg-slate-900/90 text-white text-xs font-bold px-3.5 py-2 rounded-xl backdrop-blur-md shadow-lg flex items-center gap-2 border border-slate-700">
+                  🔍 Klik untuk Preview / Lihat Gambar Penuh
+                </span>
+              </div>
             </div>
           )}
 
@@ -199,13 +212,44 @@ export const MadingDetailModal: React.FC<MadingDetailModalProps> = ({
         <div className="p-4 bg-slate-50 border-t border-slate-200 text-right">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
           >
             Tutup
           </button>
         </div>
 
       </div>
+
+      {/* Fullscreen Image Preview Lightbox Modal */}
+      {isPreviewOpen && post.coverImage && (
+        <div 
+          className="fixed inset-0 z-60 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsPreviewOpen(false)}
+        >
+          <div 
+            className="relative max-w-6xl max-h-[92vh] w-full h-full flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsPreviewOpen(false)}
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-70 bg-slate-800/90 hover:bg-red-600 text-white p-3 rounded-full shadow-2xl border border-slate-700 transition-all cursor-pointer flex items-center justify-center"
+              title="Tutup Preview"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="overflow-auto max-w-full max-h-[85vh] flex items-center justify-center p-2">
+              <img
+                src={post.coverImage}
+                alt={post.title}
+                className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-slate-800 bg-slate-900"
+              />
+            </div>
+            <div className="mt-4 bg-slate-900/90 text-slate-200 text-xs sm:text-sm px-6 py-2.5 rounded-xl backdrop-blur-md border border-slate-700 text-center shadow-xl">
+              <span className="font-bold text-amber-400 mr-2">{post.title}</span> — Pratinjau Penuh Gambar Karya
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

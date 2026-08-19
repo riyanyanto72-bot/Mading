@@ -128,11 +128,11 @@ export const MadingGrid: React.FC<MadingGridProps> = ({
             className="grid grid-cols-1 lg:grid-cols-12 gap-5 cursor-pointer group bg-white p-4 rounded-lg border border-amber-200 shadow-sm hover:border-indigo-400 transition-all"
           >
             {pinnedPost.coverImage && (
-              <div className="lg:col-span-5 h-44 sm:h-52 rounded overflow-hidden bg-slate-100">
+              <div className="lg:col-span-5 h-48 sm:h-56 rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
                 <img
                   src={pinnedPost.coverImage}
                   alt={pinnedPost.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             )}

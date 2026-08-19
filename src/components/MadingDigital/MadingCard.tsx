@@ -49,14 +49,14 @@ export const MadingCard: React.FC<MadingCardProps> = ({ post, currentUser, onSel
 
       {/* Cover Image */}
       {post.coverImage && (
-        <div className="relative h-40 sm:h-44 w-full overflow-hidden bg-slate-100">
+        <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-950 flex items-center justify-center">
           <img
             src={post.coverImage}
             alt={post.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-40 pointer-events-none" />
           
           <span
             className={`absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded border shadow-xs ${

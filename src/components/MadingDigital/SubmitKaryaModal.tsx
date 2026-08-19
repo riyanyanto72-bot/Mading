@@ -375,13 +375,13 @@ export const SubmitKaryaModal: React.FC<SubmitKaryaModalProps> = ({
                   />
 
                   {coverImage ? (
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-900 bg-slate-900 group">
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-900 bg-slate-950 flex items-center justify-center group h-52">
                       <img
                         src={coverImage}
                         alt="Preview Karya"
-                        className="w-full h-44 object-cover"
+                        className="w-full h-full object-contain"
                       />
-                      <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
@@ -448,8 +448,8 @@ export const SubmitKaryaModal: React.FC<SubmitKaryaModalProps> = ({
                     />
                   </div>
                   {coverImage && (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 h-28 bg-slate-100">
-                      <img src={coverImage} alt="Preview URL" className="w-full h-full object-cover" />
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 h-36 bg-slate-950 flex items-center justify-center">
+                      <img src={coverImage} alt="Preview URL" className="w-full h-full object-contain" />
                       <button
                         type="button"
                         onClick={() => setCoverImage('')}
