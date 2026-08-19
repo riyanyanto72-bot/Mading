@@ -48,11 +48,12 @@ export const RoleSwitcherModal: React.FC<RoleSwitcherModalProps> = ({
     );
 
     if (matchedStaff) {
+      const isAdminAccount = matchedStaff.id === 'acc-admin-1' || matchedStaff.username === 'admin' || matchedStaff.email === 'riyanyanto72@admin.smp.belajar.id';
       const staffUserAccount: UserAccount = {
         id: matchedStaff.id,
         name: matchedStaff.full_name || matchedStaff.name,
-        role: matchedStaff.role,
-        roleLabel: matchedStaff.role === 'admin' ? 'Administrator Sekolah' : (matchedStaff.subject || 'Dewan Guru'),
+        role: isAdminAccount ? 'admin' : matchedStaff.role,
+        roleLabel: isAdminAccount ? 'Administrator Sekolah' : (matchedStaff.role === 'admin' ? 'Administrator Sekolah' : (matchedStaff.subject || 'Dewan Guru')),
         identifier: matchedStaff.identifier || (matchedStaff.nip ? `NIP. ${matchedStaff.nip}` : matchedStaff.username),
         nip: matchedStaff.nip,
         username: matchedStaff.username,

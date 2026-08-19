@@ -48,7 +48,12 @@ export default function App() {
     const saved = localStorage.getItem('school_current_user_v1');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.id === 'acc-admin-1' || parsed.username === 'admin' || parsed.email === 'riyanyanto72@admin.smp.belajar.id') {
+          parsed.role = 'admin';
+          parsed.roleLabel = 'Administrator Sekolah';
+        }
+        return parsed;
       } catch {
         return GUEST_ACCOUNT;
       }
