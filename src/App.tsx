@@ -347,6 +347,7 @@ export default function App() {
     class_grade?: string;
     content: string;
     excerpt: string;
+    coverImage?: string;
     cover_image?: string;
   }) => {
     // Siswa submissions need approval ('pending'), Guru and Admin auto-approve ('published')
@@ -365,7 +366,7 @@ export default function App() {
       }),
       content: newPostData.content,
       excerpt: newPostData.excerpt,
-      coverImage: newPostData.cover_image,
+      coverImage: newPostData.coverImage || newPostData.cover_image,
       tags: ['Mading', newPostData.category],
       likes: 0,
       comments: [],
